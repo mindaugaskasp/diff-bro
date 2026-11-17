@@ -6,6 +6,7 @@ import { connectTo } from './server'
 import { parseKeyText } from '../keyText'
 import { encodePublicKey } from '../sealing'
 import { checkedTrustedName, storeTrusted } from '../trustedKeys'
+import { appendLog } from '../logger'
 
 const FP = /^[0-9a-f]{32}$/
 let pairing = null
@@ -24,6 +25,7 @@ export function setUpPairing({ lan, identity, onTrustChanged }) {
   const limit = createRateLimit({ limit: 3, windowMs: 60_000 })
   const settings = () => lan.settings()
   pairing = createPairing({
+    log: (message) => appendLog({ source: 'lan', level: 'info', message }),
     identity: {
       fp: identity.pub.fingerprint,
       keyText: encodePublicKey(identity.pub),

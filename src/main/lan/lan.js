@@ -14,10 +14,10 @@ const ipv4Addresses = () =>
     .filter((a) => a.family === 'IPv4' || a.family === 4)
     .map((a) => a.address)
 
-function announcement(ctx, ttl) {
+function announcement(ctx, ttl, addr) {
   const { settings, server, selfFp } = ctx
   return settings.visible && server?.port
-    ? encodeAnnouncement({ fp: selfFp, name: settings.name, port: server.port, ttl })
+    ? encodeAnnouncement({ fp: selfFp, name: settings.name, port: server.port, ttl, addr })
     : null
 }
 
@@ -37,9 +37,12 @@ async function open(ctx) {
   })
   ctx.discovery = await createDiscovery({
     addresses: ctx.addresses,
-    announcement: () => announcement(ctx),
+    announcement: (addr) => announcement(ctx, undefined, addr),
     onPeer: (peer) => {
       if (!ctx.peers.saw(peer, ctx.now())) return
+      ctx.log?.(
+        `peer ${peer.fp.slice(0, 8)} at ${peer.address}:${peer.port} (named ${peer.addr ?? 'none'}, sent from ${peer.source})`
+      )
       ctx.peerHandlers.forEach((handle) => handle(peer.fp))
       ctx.onChange()
     }
@@ -53,8 +56,7 @@ async function close(ctx) {
   Object.assign(ctx, { discovery: null, server: null, addresses: [] })
   ctx.peers.clear()
   try {
-    const goodbye = announcement({ ...ctx, discovery, server }, 0)
-    if (goodbye) await discovery?.sendRaw(goodbye)
+    await discovery?.sendEach((addr) => announcement({ ...ctx, discovery, server }, 0, addr))
     await discovery?.close()
   } finally {
     await server?.close()
@@ -105,8 +107,7 @@ async function toggle(ctx, next) {
 async function refreshPresence(ctx, before) {
   const { settings } = ctx
   if (before.visible && !settings.visible) {
-    const goodbye = announcement({ ...ctx, settings: before }, 0)
-    if (goodbye) await ctx.discovery?.sendRaw(goodbye)
+    await ctx.discovery?.sendEach((addr) => announcement({ ...ctx, settings: before }, 0, addr))
   } else if (settings.visible !== before.visible || settings.name !== before.name) {
     ctx.discovery?.announce()
   }
@@ -120,11 +121,12 @@ async function apply(ctx, next) {
   ctx.onChange()
 }
 
-export function createLan({ settings, selfFp, onChange, now = Date.now }) {
+export function createLan({ settings, selfFp, onChange, log, now = Date.now }) {
   const ctx = {
     settings,
     selfFp,
     onChange,
+    log,
     now,
     handlers: new Map(),
     acceptors: new Map(),

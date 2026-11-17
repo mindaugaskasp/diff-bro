@@ -24,6 +24,13 @@ const view = (s) => ({
   ...(s.role === 'holder' && s.stage === 'show-code' ? { code: s.code } : {})
 })
 
+const short = (fp) => fp.slice(0, 8)
+const note = (ctx, message) => ctx.log?.(message)
+const errorText = (err) =>
+  [err?.code ?? err?.message, err?.address && `${err.address}:${err.port}`]
+    .filter(Boolean)
+    .join(' ')
+
 function finish(ctx, s, stage, { silent = false } = {}) {
   if (s.done) return
   s.done = true
@@ -60,8 +67,13 @@ function onAdderFrame(ctx, s, { header }) {
   if (header.type === 'add-result' && RESULT_STAGE[header.result])
     return finish(ctx, s, header.result === 'expired' ? 'expired' : 'cancelled')
   const parsed = header.type === 'add-reply' && parsedOrNull(ctx, header.key)
-  if (s.stage !== 'connecting' || !parsed || parsed.fp !== s.peerFp)
+  if (s.stage !== 'connecting' || !parsed || parsed.fp !== s.peerFp) {
+    note(
+      ctx,
+      `add ${short(s.peerFp)}: unexpected ${header.type} at ${s.stage}${parsed ? ` from ${short(parsed.fp)}` : ''}`
+    )
     return finish(ctx, s, 'connection-lost')
+  }
   Object.assign(s, { holderKey: parsed.key, stage: 'enter-code' })
   s.expected = pairingCode({
     holderFp: s.peerFp,
@@ -79,9 +91,13 @@ async function add(ctx, peerFp, name) {
   try {
     s.conn = await ctx.connect(peerFp, {
       onFrame: (frame) => onAdderFrame(ctx, s, frame),
-      onClose: () => finish(ctx, s, 'connection-lost')
+      onClose: () => {
+        if (s.stage === 'connecting') note(ctx, `add ${short(peerFp)}: closed before the code step`)
+        finish(ctx, s, 'connection-lost')
+      }
     })
-  } catch {
+  } catch (err) {
+    note(ctx, `add ${short(peerFp)}: could not connect (${errorText(err)})`)
     finish(ctx, s, 'connection-lost', { silent: true })
     return { error: 'not-reachable' }
   }
@@ -113,11 +129,22 @@ function cancel(ctx, id) {
   return { ok: true }
 }
 
-function onRequest(ctx, { header }, conn) {
-  if (!ctx.isVisible() || isBusy(ctx, 'holder') || !ctx.allowRequest(conn.remote))
-    return conn.destroy()
+function refusalOf(ctx, header, conn) {
+  if (!ctx.isVisible()) return 'not visible'
+  if (isBusy(ctx, 'holder')) return 'busy with another request'
+  if (!ctx.allowRequest(conn.remote)) return 'rate-limited'
   const parsed = parsedOrNull(ctx, header.key)
-  if (!parsed || parsed.fp === ctx.identity.fp) return conn.destroy()
+  if (!parsed) return 'unreadable key'
+  return parsed.fp === ctx.identity.fp ? 'own key' : null
+}
+
+function onRequest(ctx, { header }, conn) {
+  const refusal = refusalOf(ctx, header, conn)
+  if (refusal) {
+    note(ctx, `request from ${conn.remote} refused: ${refusal}`)
+    return conn.destroy()
+  }
+  const parsed = parsedOrNull(ctx, header.key)
   const s = open(ctx, {
     role: 'holder',
     conn,

@@ -14,6 +14,7 @@ import { registerRevokeIpc, setUpRevoke } from './revokeIpc'
 import { getIdentity } from '../share'
 import { cancelPairing, registerPairingIpc, setUpPairing } from './pairingIpc'
 import { readTrusted } from '../trustedKeys'
+import { appendLog } from '../logger'
 
 const settingsFile = () => join(app.getPath('userData'), 'lan.json')
 const run = async (cmd, args) => (await promisify(execFile)(cmd, args)).stdout
@@ -58,6 +59,7 @@ export async function startLanSharing() {
   lan = createLan({
     settings,
     selfFp: identity.pub.fingerprint,
+    log: (message) => appendLog({ source: 'lan', level: 'info', message }),
     // One spoofed packet can carry many records; each would otherwise re-read the trust store.
     onChange: coalesce(() => broadcastLan().catch(() => {}), 100)
   })

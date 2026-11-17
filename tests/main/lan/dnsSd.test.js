@@ -173,3 +173,22 @@ describe('hostile packets', () => {
     expect(peer.name).toBe('ecilA')
   })
 })
+
+describe('the address an announcement names', () => {
+  it("carries the sender's own address, which a relaying router would otherwise replace", () => {
+    const packet = encodeAnnouncement({ fp: FP, name: 'Ben', port: 4000, addr: '192.168.2.14' })
+    expect(announcementsFrom(decodePacket(packet))[0]).toMatchObject({
+      addr: '192.168.2.14',
+      port: 4000
+    })
+  })
+
+  it('names no address when it was not given or is not an IPv4 address', () => {
+    expect(
+      announcementsFrom(decodePacket(encodeAnnouncement({ fp: FP, name: 'Ben', port: 4000 })))[0]
+        .addr
+    ).toBeUndefined()
+    const odd = encodeAnnouncement({ fp: FP, name: 'Ben', port: 4000, addr: 'evil.example' })
+    expect(announcementsFrom(decodePacket(odd))[0].addr).toBeUndefined()
+  })
+})

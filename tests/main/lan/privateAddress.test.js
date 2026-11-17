@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { isPrivateAddress, privateInterfaceAddresses } from '../../../src/main/lan/privateAddress'
+import {
+  isPrivateAddress,
+  privateInterfaceAddresses,
+  reachableAt
+} from '../../../src/main/lan/privateAddress'
 
 describe('isPrivateAddress', () => {
   it.each([
@@ -51,5 +55,16 @@ describe('privateInterfaceAddresses', () => {
 
   it('treats a missing table as no interfaces', () => {
     expect(privateInterfaceAddresses(undefined)).toEqual([])
+  })
+})
+
+describe('reachableAt', () => {
+  it('prefers the private address an announcement names over the packet source', () => {
+    expect(reachableAt('192.168.2.14', '192.168.1.1')).toBe('192.168.2.14')
+  })
+
+  it('falls back to the source when the named address is missing or not private', () => {
+    expect(reachableAt(undefined, '192.168.1.20')).toBe('192.168.1.20')
+    expect(reachableAt('8.8.8.8', '192.168.1.20')).toBe('192.168.1.20')
   })
 })
