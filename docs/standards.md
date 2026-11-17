@@ -82,7 +82,9 @@ regression test from decoration.
    one TCP listener. The fences:
    - Both live in `src/main/lan/` and nowhere else: `net` and `dgram` are
      lint-banned outside it, and `http`, `https`, `http2` and `tls` everywhere.
-   - They bind to private interface addresses only, never `0.0.0.0`.
+   - The TCP listener binds to private interface addresses only, never
+     `0.0.0.0`. The mDNS socket listens on UDP 5353 on every interface, which
+     multicast needs, and drops any packet from a non-private address.
    - A connection from a non-private address is dropped before a byte is read,
      and every frame is size-checked before it is buffered.
    - Nothing reaches the internet, and turning the setting off closes both.

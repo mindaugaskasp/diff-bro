@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { createIdentityKeys } from '../../../src/main/sealing'
+import { digestOf, signAck } from '../../../src/main/lan/acks'
 import {
   ITEM_LIMITS,
-  ackResult,
+  itemHeader,
+  verifiedAck,
   cleanFps,
   deliveryReport,
   resolveRecipients,
@@ -113,14 +116,30 @@ describe('sending helpers', () => {
     expect(resolveRecipients([A, 'cc'.repeat(16)], trusted)).toEqual({ error: 'unknown-recipient' })
   })
 
-  it('reads an acknowledgement', () => {
-    expect(ackResult({ type: 'item-ack', ok: true })).toEqual({ ok: true })
-    expect(ackResult({ type: 'item-ack', ok: false, reason: 'inbox-full' })).toEqual({
-      ok: false,
-      reason: 'inbox-full'
-    })
-    expect(ackResult({ type: 'add-reveal' })).toEqual({ ok: false, reason: 'refused' })
-    expect(ackResult(undefined)).toEqual({ ok: false, reason: 'refused' })
+  it('trusts an acknowledgement only when the recipient signed it over what was sent', () => {
+    const bob = createIdentityKeys()
+    const digest = digestOf(Buffer.from('body'))
+    const signed = (fields) => signAck(bob.priv, { kind: 'item', digest, ...fields })
+    const check = (h) => verifiedAck(h, { signKey: bob.pub.sign, digest })
+    expect(check({ type: 'item-ack', ok: true, sig: signed({ ok: true }) })).toEqual({ ok: true })
+    expect(
+      check({
+        type: 'item-ack',
+        ok: false,
+        reason: 'inbox-full',
+        sig: signed({ ok: false, reason: 'inbox-full' })
+      })
+    ).toEqual({ ok: false, reason: 'inbox-full' })
+    expect(check({ type: 'item-ack', ok: true })).toEqual({ ok: false, reason: 'unverified' })
+    expect(
+      check({
+        type: 'item-ack',
+        ok: true,
+        sig: signAck(createIdentityKeys().priv, { kind: 'item', digest, ok: true })
+      })
+    ).toEqual({ ok: false, reason: 'unverified' })
+    expect(check({ type: 'add-reveal' })).toEqual({ ok: false, reason: 'refused' })
+    expect(check(undefined)).toEqual({ ok: false, reason: 'refused' })
   })
 
   it('reports who it reached and who it did not, by name', () => {
@@ -136,5 +155,11 @@ describe('sending helpers', () => {
       sent: ['Ana'],
       failed: [{ name: 'Ben', reason: 'offline' }]
     })
+  })
+})
+
+describe('itemHeader', () => {
+  it('carries the sender and nothing about the item', () => {
+    expect(itemHeader('ab'.repeat(16))).toEqual({ type: 'item', fp: 'ab'.repeat(16) })
   })
 })

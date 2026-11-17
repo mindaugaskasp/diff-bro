@@ -15,7 +15,8 @@ export function verifyRevoke(frame, { trusted, me, now }) {
   const signer = trusted.find((t) => t.fingerprint === frame.fp)
   if (!signer?.sign) return null
   const fresh = frame.at <= now + CLOCK_SKEW_MS && now - frame.at <= REVOKE_TTL_MS
-  if (!fresh) return null
+  // Older than the current trust: an old notice replayed after they were added back.
+  if (!fresh || frame.at < (Number(signer.addedAt) || 0)) return null
   try {
     const ok = verify(
       null,

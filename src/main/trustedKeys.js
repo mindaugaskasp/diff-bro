@@ -40,7 +40,13 @@ export const replaceTrusted = (list) => writeTrusted(list)
 export async function storeTrusted(key, fp, label) {
   const before = await readTrusted()
   const previous = before.find((t) => t.fingerprint === fp)
-  const entry = { fingerprint: fp, label: (label || fp).trim() || fp, sign: key.sign, box: key.box }
+  const entry = {
+    fingerprint: fp,
+    label: (label || fp).trim() || fp,
+    sign: key.sign,
+    box: key.box,
+    addedAt: previous?.addedAt ?? Date.now()
+  }
   if (previous?.email) entry.email = previous.email
   await writeTrusted([...before.filter((t) => t.fingerprint !== fp), entry])
 }

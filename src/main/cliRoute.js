@@ -24,7 +24,12 @@ function deliver(command) {
   if (!command) return
   const win = ensureMainWindow()
   const live = !!listener && !listener.isDestroyed()
-  appendLog({ source: 'cli', message: `deliver ${command.name}`, context: { live, win: !!win } })
+  appendLog({
+    source: 'cli',
+    level: 'info',
+    message: `deliver ${command.name}`,
+    context: { live, win: !!win }
+  })
   if (live) listener.send('cli:command', command)
   else pending = command
   win?.focus()

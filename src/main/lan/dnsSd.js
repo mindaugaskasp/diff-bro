@@ -1,4 +1,6 @@
 // In-repo rather than multicast-dns / bonjour-service: one service is a small subset, and rule 2 stays at zero.
+import { cleanPeerName } from './peerName'
+
 export const SERVICE = '_diffbro._tcp.local'
 export const ANNOUNCE_TTL = 120
 
@@ -84,8 +86,13 @@ function readLabel(buf, offset) {
   return buf.toString('utf8', offset + 1, offset + 1 + len)
 }
 
+const MAX_NAME_BYTES = 255
+const MAX_PACKET_BYTES = 9000
+const MAX_ENTRIES = 64
+
 function readName(buf, start) {
   const labels = []
+  let bytes = 0
   let offset = start
   let end = -1
   let jumps = 0
@@ -96,6 +103,8 @@ function readName(buf, start) {
       continue
     }
     const label = readLabel(buf, offset)
+    bytes += 1 + buf[offset]
+    if (bytes > MAX_NAME_BYTES) throw new Error('name-too-long')
     labels.push(label)
     offset += 1 + buf[offset]
   }
@@ -127,10 +136,11 @@ function readQuestions(buf, count) {
 }
 
 export function decodePacket(buf) {
-  if (!Buffer.isBuffer(buf) || buf.length < 12) return null
+  if (!Buffer.isBuffer(buf) || buf.length < 12 || buf.length > MAX_PACKET_BYTES) return null
   try {
     const isResponse = (buf.readUInt16BE(2) & 0x8000) !== 0
     const counts = [4, 6, 8, 10].map((at) => buf.readUInt16BE(at))
+    if (counts.reduce((a, b) => a + b, 0) > MAX_ENTRIES) return null
     const { questions, offset } = readQuestions(buf, counts[0])
     const records = []
     let next = offset
@@ -169,7 +179,7 @@ function peerFromTxt(txt, ttl) {
   const ok =
     txt.v === '1' && FP.test(txt.fp ?? '') && Number.isInteger(port) && port > 0 && port < 65536
   if (!ok || typeof txt.name !== 'string') return null
-  return { fp: txt.fp, name: [...txt.name].slice(0, NAME_CHARS).join(''), port, version: 1, ttl }
+  return { fp: txt.fp, name: cleanPeerName(txt.name, NAME_CHARS), port, version: 1, ttl }
 }
 
 export function announcementsFrom(packet) {

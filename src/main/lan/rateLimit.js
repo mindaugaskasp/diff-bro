@@ -18,3 +18,14 @@ export function createRateLimit({ limit, windowMs }) {
     size: () => hits.size
   }
 }
+
+export function coalesce(run, ms) {
+  let timer = null
+  return () => {
+    if (timer) return
+    timer = setTimeout(() => {
+      timer = null
+      run()
+    }, ms)
+  }
+}

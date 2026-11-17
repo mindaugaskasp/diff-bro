@@ -86,3 +86,15 @@ describe('staleLogFiles', () => {
     expect(staleLogFiles(['diffbro-2026-07-23.log', 'vault.key'], 7)).toEqual([])
   })
 })
+
+describe('levels', () => {
+  it('tags an informational record, so a reader can tell it from a failure', () => {
+    const at = new Date('2026-11-17T10:00:00.000Z')
+    expect(
+      formatLogEntry({ source: 'quicklook', level: 'info', message: 'launcher reveal' }, at)
+    ).toBe('[2026-11-17T10:00:00.000Z] [quicklook] [info] launcher reveal\n')
+    expect(formatLogEntry({ source: 'main', message: 'boom' }, at)).toBe(
+      '[2026-11-17T10:00:00.000Z] [main] boom\n'
+    )
+  })
+})

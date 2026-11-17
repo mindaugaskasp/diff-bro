@@ -133,3 +133,43 @@ describe('decoding foreign packets', () => {
     expect(decodePacket(Buffer.concat([header, label]))).toBeNull()
   })
 })
+
+describe('hostile packets', () => {
+  const header = (answers) =>
+    Buffer.from([0, 0, 0x84, 0, 0, 0, answers >> 8, answers & 255, 0, 0, 0, 0])
+  const txtRecord = (name) => {
+    const data = Buffer.concat(
+      ['v=1', `fp=${FP}`, `name=${name}`, 'port=4000'].map((s) =>
+        Buffer.concat([Buffer.from([Buffer.byteLength(s)]), Buffer.from(s)])
+      )
+    )
+    const owner = nameBytes([FP, '_diffbro', '_tcp', 'local'])
+    return Buffer.concat([
+      owner,
+      Buffer.from([0, 16, 0, 1, 0, 0, 0, 120, data.length >> 8, data.length & 255]),
+      data
+    ])
+  }
+
+  it('refuses a name longer than DNS allows', () => {
+    const long = nameBytes(Array.from({ length: 6 }, () => 'x'.repeat(60)))
+    const rec = Buffer.concat([long, Buffer.from([0, 16, 0, 1, 0, 0, 0, 120, 0, 0])])
+    expect(decodePacket(Buffer.concat([header(1), rec]))).toBeNull()
+  })
+
+  it('refuses a packet with more records than any announcement needs', () => {
+    const rec = Buffer.concat([Buffer.from([0]), Buffer.from([0, 1, 0, 1, 0, 0, 0, 120, 0, 0])])
+    expect(decodePacket(Buffer.concat([header(200), ...Array(200).fill(rec)]))).toBeNull()
+  })
+
+  it('refuses an oversized datagram before parsing it', () => {
+    expect(decodePacket(Buffer.concat([header(0), Buffer.alloc(10_000)]))).toBeNull()
+  })
+
+  it('strips direction overrides and invisible characters from an announced name', () => {
+    const [peer] = announcementsFrom(
+      decodePacket(Buffer.concat([header(1), txtRecord('\u202eecilA\u200b')]))
+    )
+    expect(peer.name).toBe('ecilA')
+  })
+})

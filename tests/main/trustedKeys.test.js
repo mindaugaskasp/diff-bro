@@ -45,8 +45,21 @@ describe('storeTrusted', () => {
   it('adds a key with its label', async () => {
     await storeTrusted(key('a'), 'fp-a', 'Ana')
     expect(await readTrusted()).toEqual([
-      { fingerprint: 'fp-a', label: 'Ana', sign: 'sign-a', box: 'box-a' }
+      {
+        fingerprint: 'fp-a',
+        label: 'Ana',
+        sign: 'sign-a',
+        box: 'box-a',
+        addedAt: expect.any(Number)
+      }
     ])
+  })
+
+  it('keeps when a key was first added across a re-import', async () => {
+    await storeTrusted(key('a'), 'fp-a', 'Ana')
+    const { addedAt } = (await readTrusted())[0]
+    await storeTrusted(key('a'), 'fp-a', 'Ana P')
+    expect((await readTrusted())[0].addedAt).toBe(addedAt)
   })
 
   it('falls back to the fingerprint when the label is blank', async () => {

@@ -4,7 +4,8 @@
 //
 // SECURITY: the login item writes a registry Run entry for main's OWN
 // process.execPath. The renderer supplies booleans and never a path (rule 7).
-import { Menu, Tray, app, ipcMain } from 'electron'
+import { Menu, Tray, app, ipcMain, nativeImage } from 'electron'
+import { readFileSync } from 'fs'
 import trayIcon from '../../resources/tray.png?asset'
 import { readSettings } from './appData'
 import { t } from './i18n'
@@ -60,7 +61,8 @@ export function installTray(handlers) {
       app.quit()
     }
   }
-  tray = new Tray(trayIcon)
+  // Through fs, which reads inside app.asar; a bare path leaves that to the image loader.
+  tray = new Tray(nativeImage.createFromBuffer(readFileSync(trayIcon)))
   tray.setToolTip(t('tray.tooltip'))
   tray.setContextMenu(buildMenu())
   // Left click is the shortest way back to what you closed.

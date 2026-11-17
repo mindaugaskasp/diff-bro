@@ -3,6 +3,7 @@ import { mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import {
+  MAX_PER_SENDER,
   MAX_WAITING,
   isItemId,
   listItems,
@@ -33,8 +34,10 @@ describe('lan inbox', () => {
   })
 
   it('caps how many items can wait', () => {
-    for (let i = 0; i < MAX_WAITING; i++) writeItem(dir, { sealed: { n: i }, fromFp: A, now: i })
-    expect(writeItem(dir, { sealed: {}, fromFp: A, now: 0 })).toEqual({ error: 'inbox-full' })
+    const fp = (i) => (i % 10).toString(16).repeat(32)
+    for (let i = 0; i < MAX_WAITING; i++)
+      writeItem(dir, { sealed: { n: i }, fromFp: fp(i), now: i })
+    expect(writeItem(dir, { sealed: {}, fromFp: B, now: 0 })).toEqual({ error: 'inbox-full' })
     expect(listItems(dir)).toHaveLength(MAX_WAITING)
   })
 
@@ -61,5 +64,36 @@ describe('lan inbox', () => {
 
   it('reads nothing from a missing folder', () => {
     expect(listItems(join(dir, 'nope'))).toEqual([])
+  })
+})
+
+describe('replayed and flooding items', () => {
+  const later = { now: 1, expiresAt: 10_000 }
+
+  it('refuses the same sealed item twice while one is waiting', () => {
+    writeItem(dir, { sealed: { ciphertext: 'abc' }, fromFp: A, ...later })
+    expect(writeItem(dir, { sealed: { ciphertext: 'abc' }, fromFp: A, ...later })).toEqual({
+      error: 'duplicate'
+    })
+  })
+
+  it('refuses an item that was already opened or declined, until it would have expired', () => {
+    const { id } = writeItem(dir, { sealed: { ciphertext: 'abc' }, fromFp: A, ...later })
+    removeItem(dir, id, 5)
+    expect(writeItem(dir, { sealed: { ciphertext: 'abc' }, fromFp: A, ...later })).toEqual({
+      error: 'duplicate'
+    })
+    expect(
+      writeItem(dir, { sealed: { ciphertext: 'abc' }, fromFp: A, now: 10_001, expiresAt: 20_000 })
+    ).toHaveProperty('id')
+  })
+
+  it('caps one sender, so they cannot crowd out everyone else', () => {
+    for (let i = 0; i < MAX_PER_SENDER; i++)
+      writeItem(dir, { sealed: { n: i }, fromFp: A, ...later })
+    expect(writeItem(dir, { sealed: { n: 'x' }, fromFp: A, ...later })).toEqual({
+      error: 'sender-full'
+    })
+    expect(writeItem(dir, { sealed: { n: 'y' }, fromFp: B, ...later })).toHaveProperty('id')
   })
 })

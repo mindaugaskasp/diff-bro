@@ -4,6 +4,26 @@ import { createFrameReader, encodeFrame } from './frames'
 
 export const IDLE_MS = 150_000
 export const MAX_CONNECTIONS = 32
+export const MAX_PER_REMOTE = 4
+// The idle timeout restarts on every byte, so a sender trickling one byte at a time never hits it.
+export const FRAME_DEADLINE_MS = 60_000
+
+export function createAdmission() {
+  const open = new Map()
+  return {
+    admit(remote) {
+      const count = open.get(remote) ?? 0
+      if (count >= MAX_PER_REMOTE) return false
+      open.set(remote, count + 1)
+      return true
+    },
+    release(remote) {
+      const count = (open.get(remote) ?? 1) - 1
+      if (count > 0) open.set(remote, count)
+      else open.delete(remote)
+    }
+  }
+}
 
 export function wrapSocket(socket, onFrame, accept) {
   const reader = createFrameReader({ accept })
@@ -13,15 +33,23 @@ export function wrapSocket(socket, onFrame, accept) {
     close: () => socket.end(),
     destroy: () => socket.destroy()
   }
+  let deadline = null
+  const clearDeadline = () => {
+    clearTimeout(deadline)
+    deadline = null
+  }
   socket.setTimeout(IDLE_MS, () => socket.destroy())
   socket.on('data', (chunk) => {
+    deadline ??= setTimeout(() => socket.destroy(), FRAME_DEADLINE_MS)
     try {
       for (const frame of reader.push(chunk)) onFrame(frame, conn)
+      if (!reader.isMidFrame()) clearDeadline()
     } catch {
       socket.destroy()
     }
   })
   socket.on('error', () => socket.destroy())
+  socket.on('close', clearDeadline)
   return conn
 }
 
@@ -41,11 +69,15 @@ function listenOne(address, port, onSocket) {
 export async function listenOnPrivate(addresses, { onFrame, onClose, accept }) {
   const servers = []
   const sockets = new Set()
+  const admission = createAdmission()
   let port = 0
   const handle = (socket) => {
+    const remote = socket.remoteAddress
+    if (!admission.admit(remote)) return socket.destroy()
     sockets.add(socket)
     const conn = wrapSocket(socket, onFrame, accept)
     socket.on('close', () => {
+      admission.release(remote)
       sockets.delete(socket)
       onClose?.(conn)
     })

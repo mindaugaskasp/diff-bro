@@ -2,14 +2,17 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { isItemId, listItems, readItem, removeItem, removeItemsFrom, writeItem } from './lanInbox'
 import {
-  ackResult,
   cleanFps,
   deliveryReport,
   isValidItemEntry,
+  itemHeader,
   itemSummary,
   resolveRecipients,
-  snippetEntry
+  snippetEntry,
+  verifiedAck
 } from './lanItems'
+import { digestOf } from './acks'
+import { createItemReceiver } from './itemReceiver'
 import { FRAME_LIMITS } from './frames'
 import { createRateLimit } from './rateLimit'
 import { connectTo } from './server'
@@ -28,7 +31,6 @@ const send = (channel, payload) => {
 let lan = null
 let trustedFps = new Set()
 const TRUST_REFRESH_MS = 30_000
-const limit = createRateLimit({ limit: 10, windowMs: 60_000 })
 
 async function openStored(record) {
   const opened = openSealedWith(record.sealed, await decryptionIdentities(), await readTrusted())
@@ -36,30 +38,15 @@ async function openStored(record) {
   return { entry: opened.entry, from: opened.from, fp: opened.signer }
 }
 
-function parseSealed(body) {
-  try {
-    return JSON.parse(body.toString('utf8'))
-  } catch {
-    return null
-  }
-}
-
-async function onItem({ header, body }, conn) {
-  const isTrusted = (await readTrusted()).some((t) => t.fingerprint === header.fp)
-  if (!isTrusted || !body || !limit.allow(header.fp, Date.now())) return conn.destroy()
-  const ack = (ok, reason) => {
-    conn.send({ type: 'item-ack', ok, ...(reason ? { reason } : {}) })
-    conn.close()
-  }
-  const record = { sealed: parseSealed(body), fromFp: header.fp }
-  const opened = record.sealed && (await openStored(record))
-  if (!opened) return ack(false, 'bad-item')
-  const now = Date.now()
-  const stored = writeItem(inboxDir(), { ...record, now })
-  if (stored.error) return ack(false, stored.error)
-  ack(true)
-  send('lan:itemArrived', itemSummary({ id: stored.id, receivedAt: now }, opened))
-}
+const onItem = createItemReceiver({
+  trustedFps: () => trustedFps,
+  open: openStored,
+  store: (record) => writeItem(inboxDir(), record),
+  notify: (summary) => send('lan:itemArrived', summary),
+  signingKey: async () => (await getIdentity()).priv,
+  senderLimit: createRateLimit({ limit: 10, windowMs: 60_000 }),
+  remoteLimit: createRateLimit({ limit: 30, windowMs: 60_000 })
+})
 
 async function waitingItems() {
   const out = []
@@ -74,7 +61,7 @@ async function waitingItems() {
 async function openItem(id) {
   const record = isItemId(id) ? readItem(inboxDir(), id) : null
   const opened = record && (await openStored(record))
-  if (record) removeItem(inboxDir(), id)
+  if (record) removeItem(inboxDir(), id, Date.now())
   return opened ? { ok: true, ...opened } : { error: 'gone' }
 }
 
@@ -91,21 +78,30 @@ function entryFor(req) {
   return { entry: req?.diff ? { ...req.diff, kind: 'diff' } : null }
 }
 
-function deliver(fp, header, body) {
+function deliver(recipient, header, body) {
+  const fp = recipient.fingerprint
   const endpoint = lan?.endpointOf(fp)
   if (!endpoint) return Promise.resolve({ fp, ok: false, reason: 'offline' })
+  const check = { signKey: recipient.sign, digest: digestOf(body) }
   return new Promise((resolve) => {
+    let conn = null
     const done = (result) => resolve({ fp, ...result })
-    const timer = setTimeout(() => done({ ok: false, reason: 'timeout' }), ACK_MS)
+    const timer = setTimeout(() => {
+      conn?.destroy()
+      done({ ok: false, reason: 'timeout' })
+    }, ACK_MS)
     connectTo(endpoint, {
-      onFrame: ({ header: h }, conn) => {
+      onFrame: ({ header: h }, c) => {
         clearTimeout(timer)
-        conn.close()
-        done(ackResult(h))
+        c.close()
+        done(verifiedAck(h, check))
       },
       onClose: () => done({ ok: false, reason: 'closed' })
     })
-      .then((conn) => conn.send(header, body))
+      .then((c) => {
+        conn = c
+        c.send(header, body)
+      })
       .catch(() => done({ ok: false, reason: 'offline' }))
   })
 }
@@ -122,8 +118,8 @@ async function sendItem(req) {
   const sender = { priv, fingerprint: pub.fingerprint }
   const body = Buffer.from(JSON.stringify(sealEntry(entry, sender, resolved.recipients)))
   if (body.length > FRAME_LIMITS.item) return { error: 'too-large' }
-  const header = { type: 'item', kind: entry.kind, name: entry.name, fp: pub.fingerprint }
-  const results = await Promise.all(fps.map((fp) => deliver(fp, header, body)))
+  const header = itemHeader(pub.fingerprint)
+  const results = await Promise.all(resolved.recipients.map((r) => deliver(r, header, body)))
   return deliveryReport(results, trusted)
 }
 
@@ -145,7 +141,7 @@ export function registerItemsIpc() {
   ipcMain.handle('lan:items', () => waitingItems())
   ipcMain.handle('lan:openItem', (_e, id) => openItem(String(id)))
   ipcMain.handle('lan:declineItem', (_e, id) => {
-    if (isItemId(id)) removeItem(inboxDir(), id)
+    if (isItemId(id)) removeItem(inboxDir(), id, Date.now())
     send('lan:itemsChanged', null)
     return { ok: true }
   })

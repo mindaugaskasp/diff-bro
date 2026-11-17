@@ -4,6 +4,8 @@ import { hostname } from 'os'
 import { join } from 'path'
 import { promisify } from 'util'
 import { createLan } from './lan'
+import { peerRows } from './peers'
+import { coalesce } from './rateLimit'
 import { readComputerName } from './computerName'
 import { readLanSettings, writeLanSettings } from './lanStore'
 import { SILENCE_CHOICES, normalizeLanSettings, setPopups, silence } from './lanSettings'
@@ -25,7 +27,7 @@ export const lanService = () => lan
 const OFF = { enabled: false, visible: false, popups: true, silencedUntil: 0, name: '' }
 
 export async function lanSnapshot() {
-  const trusted = new Set((await readTrusted()).map((t) => t.fingerprint))
+  const trusted = await readTrusted()
   const { enabled, visible, popups, silencedUntil, name } = lan?.settings() ?? settings ?? OFF
   return {
     enabled,
@@ -34,7 +36,7 @@ export async function lanSnapshot() {
     silencedUntil,
     name,
     online: !!lan?.isOnline(),
-    peers: (lan ? lan.peers() : []).map((p) => ({ ...p, trusted: trusted.has(p.fp) }))
+    peers: peerRows(lan ? lan.peers() : [], trusted)
   }
 }
 
@@ -56,7 +58,8 @@ export async function startLanSharing() {
   lan = createLan({
     settings,
     selfFp: identity.pub.fingerprint,
-    onChange: () => broadcastLan().catch(() => {})
+    // One spoofed packet can carry many records; each would otherwise re-read the trust store.
+    onChange: coalesce(() => broadcastLan().catch(() => {}), 100)
   })
   setUpPairing({ lan, identity, onTrustChanged: () => broadcastLan().catch(() => {}) })
   setUpItems(lan)

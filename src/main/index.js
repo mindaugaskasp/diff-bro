@@ -35,6 +35,9 @@ import { loadLocale, t } from './i18n'
 import { startMcp } from './mcp'
 import { registerClaudeIpc } from './claude'
 import { registerLanIpc, stopLanSharing } from './lan/lanIpc'
+import { runSteps } from './startSteps'
+import { isDebugLaunch } from './launchGuard'
+import { reportWhenSmokeTested } from './smoke'
 import { registerRunnerIpc } from './runner'
 import { watchForBundleUpdate } from './bundleUpdate'
 import { batchOpenFiles } from './openFileBatch'
@@ -100,20 +103,23 @@ async function askForDraft() {
 // auto-updater by design), the loser's version differs, so the running instance
 // relaunches from its now-replaced path to pick up the update rather than
 // leaving the stale UI on screen.
+const logCli = (message, context) => appendLog({ source: 'cli', level: 'info', message, context })
+
 async function boot() {
   const draftPath = await askForDraft()
   if (!app.requestSingleInstanceLock({ version: app.getVersion(), draftPath })) {
     // Quitting the instant the lock is lost raced the payload out of the door:
     // the owner intermittently never saw `second-instance`, and the draft was
     // dropped. A tick lets the singleton finish handing over before we go.
-    appendLog({ source: 'cli', message: 'lock lost, handing over to the running app' })
+    logCli('lock lost, handing over to the running app')
     setTimeout(() => app.quit(), 150)
     return
   }
+  reportWhenSmokeTested()
   // A `diffbro …` launch is a second instance: the lock hands us its argv and
   // cwd, so the command runs here rather than starting a second app.
   app.on('second-instance', (_event, argv, cwd, additionalData) => {
-    appendLog({ source: 'cli', message: 'second launch received', context: { args: argv.length } })
+    logCli('second launch received', { args: argv.length })
     if (additionalData?.version && additionalData.version !== app.getVersion()) {
       app.relaunch()
       app.exit(0)
@@ -126,74 +132,108 @@ async function boot() {
     routeCliArgv(argv, cwd, draft ? { name: 'new-snippet', draft } : null)
   })
 
-  app
-    .whenReady()
-    .then(() => startApp(draftPath))
-    .then(() => registerLanIpc({ log: (message) => appendLog({ source: 'lan', message }) }))
+  app.whenReady().then(() => startApp(draftPath))
 }
 
-function startApp(draftPath) {
-  installNetworkKillSwitch()
-  registerAppDataIpc()
-  registerDemoIpc()
-  registerQuickLookFocusIpc()
-  registerPresentationIpc()
-  loadLocale(readSettings().locale) // before installMenu: it builds from this
-  installMenu()
-  registerMenuIpc()
-  registerVaultIpc()
-  registerClipboardIpc()
-  registerFileIpc()
-  registerStreamedDiffIpc()
-  registerDiffImageIpc()
-  registerTextToolsIpc()
-  registerHashIpc()
-  registerBackupIpc()
-  setBackupHook(backupIfDue)
-  registerShareIpc()
-  registerMailIpc()
-  registerKeyExchangeIpc()
-  registerClipboardCopyIpc()
-  registerSnippetIpc()
-  registerLoggerIpc()
-  registerLinkIpc()
-  registerRunnerIpc()
-  registerCliIpc()
-  registerTrayIpc()
-  registerClaudeIpc()
-  watchForBundleUpdate()
-  // Every main window, not just the first: without this the hidden launcher
-  // keeps a window alive and blocks quit.
-  const openMainWindow = (opts) => {
-    const w = createWindow(opts)
-    attachCloseToTray(w)
-    w.on('closed', destroyQuickLook)
-    return w
-  }
-  // A login-item launch (`--hidden`) comes up in the tray: signing in should
-  // not throw a window at you. It is still BUILT, so the shortcut and the CLI
-  // have something to raise.
-  openMainWindow({ show: !startsHidden(process.argv) })
-  // After registerQuickLook, which is what hands ensureMainWindow the way to
-  // build one — the tray's Open would otherwise have nothing to call in the
-  // moment between.
-  registerQuickLook(openMainWindow)
-  installTray({ openMainWindow: () => ensureMainWindow(), toggleQuickLook })
-  // A cold `diffbro …`: this process IS the launch, so its own argv carries
-  // the command. It waits for the renderer to announce itself.
-  // We WON the lock, so the draft never left this process — the file written
-  // for the losing case is ours to remove. The sweep is for crash leftovers,
-  // and only takes what is old enough not to belong to a live CLI.
-  discardDraftFile(draftPath)
-  sweepDraftFiles()
-  routeCliArgv(process.argv, process.cwd(), cold.command)
-  // Drain what arrived early; deliver() still queues until the renderer is up.
+const named = (steps) => steps.map((step) => [step.name, step])
+
+const EARLY_IPC_STEPS = named([
+  registerAppDataIpc,
+  registerDemoIpc,
+  registerQuickLookFocusIpc,
+  registerPresentationIpc
+])
+
+const IPC_STEPS = named([
+  registerMenuIpc,
+  registerVaultIpc,
+  registerClipboardIpc,
+  registerFileIpc,
+  registerStreamedDiffIpc,
+  registerDiffImageIpc,
+  registerTextToolsIpc,
+  registerHashIpc,
+  registerBackupIpc,
+  registerShareIpc,
+  registerMailIpc,
+  registerKeyExchangeIpc,
+  registerClipboardCopyIpc,
+  registerSnippetIpc,
+  registerLoggerIpc,
+  registerLinkIpc,
+  registerRunnerIpc,
+  registerCliIpc,
+  registerTrayIpc,
+  registerClaudeIpc
+])
+
+// Every main window, not just the first: without this the hidden launcher
+// keeps a window alive and blocks quit.
+function openMainWindow(opts) {
+  const w = createWindow(opts)
+  attachCloseToTray(w)
+  w.on('closed', destroyQuickLook)
+  return w
+}
+
+function windowSteps(draftPath) {
+  return [
+    // A login-item launch (`--hidden`) comes up in the tray: signing in should
+    // not throw a window at you. It is still BUILT, so the shortcut and the CLI
+    // have something to raise.
+    ['window', () => openMainWindow({ show: !startsHidden(process.argv) })],
+    // After registerQuickLook, which is what hands ensureMainWindow the way to
+    // build one — the tray's Open would otherwise have nothing to call in the
+    // moment between.
+    ['quickLook', () => registerQuickLook(openMainWindow)],
+    ['tray', () => installTray({ openMainWindow: () => ensureMainWindow(), toggleQuickLook })],
+    ['lan', () => registerLanIpc({ log: (message) => appendLog({ source: 'lan', message }) })],
+    // We WON the lock, so the draft never left this process — the file written
+    // for the losing case is ours to remove. The sweep is for crash leftovers,
+    // and only takes what is old enough not to belong to a live CLI.
+    ['draft', () => discardDraftFile(draftPath)],
+    ['draftSweep', sweepDraftFiles],
+    // A cold `diffbro …`: this process IS the launch, so its own argv carries
+    // the command. It waits for the renderer to announce itself.
+    ['cli', () => routeCliArgv(process.argv, process.cwd(), cold.command)],
+    // Drain what arrived early; deliver() still queues until the renderer is up.
+    ['openWith', drainOpenWith],
+    ['activate', () => app.on('activate', ensureMainWindow)]
+  ]
+}
+
+function drainOpenWith() {
   handOverFile = batchOpenFiles(routeOpenWith, OPEN_FILE_BATCH_MS)
   if (openedBeforeReady.length) routeOpenWith(openedBeforeReady.splice(0))
-  app.on('activate', ensureMainWindow)
 }
 
-if (cold.command?.name === 'mcp') startMcp()
+const logStepFailure = (name, err) =>
+  appendLog({
+    source: 'main',
+    message: `Startup step ${name} failed: ${err?.message ?? err}`,
+    stack: err?.stack
+  })
+
+function startApp(draftPath) {
+  // Not a step: if the kill switch fails, nothing else may run.
+  installNetworkKillSwitch()
+  runSteps(
+    [
+      ...EARLY_IPC_STEPS,
+      ['locale', () => loadLocale(readSettings().locale)], // before installMenu: it builds from this
+      ['menu', installMenu],
+      ...IPC_STEPS,
+      ['backupHook', () => setBackupHook(backupIfDue)],
+      ['bundleUpdate', watchForBundleUpdate],
+      ...windowSteps(draftPath)
+    ],
+    logStepFailure
+  )
+}
+
+// DevTools would drive the renderer and window.api with it; e2e runs unpackaged and needs the port.
+if (app.isPackaged && isDebugLaunch((name) => app.commandLine.hasSwitch(name))) app.exit(1)
+else if (cold.command?.name === 'mcp') startMcp()
 else boot()
 
 // Every route out of the app passes through here first, so the close handler

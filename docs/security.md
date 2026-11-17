@@ -28,11 +28,13 @@ opens two sockets in the main process:
   announcements do not leave the subnet.
 - **Delivery:** one TCP listener on a random port.
 
-Both bind only to private interface addresses (RFC 1918, link-local), never
-`0.0.0.0`, and a connection from any other address is dropped before it is
-read. The announcement carries the name you chose (by default the computer's
-name), your key's fingerprint and the port. It never carries an email address
-or a key.
+The TCP listener binds only to private interface addresses (RFC 1918,
+link-local), never `0.0.0.0`, and a connection from any other address is
+dropped before it is read. The mDNS socket has to listen on UDP 5353 on every
+interface, because macOS and Windows deliver multicast only to a wildcard bind.
+It processes a packet only when it comes from a private address. The
+announcement carries the name you chose (by default the computer's name), your
+key's fingerprint and the port. It never carries an email address or a key.
 
 - **Show me to others** off stops announcing.
 - **Share on this network** off closes both sockets.
@@ -483,6 +485,38 @@ and snippets directly. The sockets, and what fences them, are in the
   sealed bytes, no new encryption, until the sender's expiry.
 - **Stop sharing** removes the other person's key and tells them with a
   notice signed by your key, so nobody else on the network can forge it.
+
+**What the network sees.** Nothing on the wire is encrypted beyond the sealed
+envelope, so anyone on the subnet can see who sends to whom, when, and how
+many bytes. An item's frame names only its sender's fingerprint. Its name and
+kind travel inside the sealed envelope.
+
+**What it cannot do:**
+
+- **Claim a delivery.** The recipient signs every acknowledgement over the exact
+  bytes it received, and the sender checks it against the key it trusts. Someone
+  answering on another person's address gets the ciphertext, which they cannot
+  open, and the sender is told the send failed.
+- **Replay an item.** An item already waiting, opened or declined is refused
+  until it would have expired. An entry dated in the future is refused, so the
+  one-week ceiling holds from now.
+- **Silence someone.** A sender's allowance is charged only after their
+  signature checks out. Frames that fail are charged to the address they came
+  from.
+- **Exhaust the app.** A frame has 60 seconds to arrive, an address may hold four
+  connections, one sender may keep ten items waiting, and the peer table caps
+  each address at sixteen entries and every entry at two minutes without a fresh
+  announcement.
+- **Rename someone you added.** Anyone you added is shown by your own label,
+  never by the name they announce. A key you add is saved under the name you
+  clicked. Direction overrides and invisible characters are removed from every
+  announced name.
+- **Replay an old Stop sharing notice.** A notice older than when you added that
+  person back is ignored.
+
+A packaged build refuses to start with `--remote-debugging-port` or
+`--remote-debugging-pipe`: the DevTools protocol would hand the renderer, and
+everything `window.api` can do, to whoever connects.
 
 ## Copy as file, and the plaintext window it opens
 

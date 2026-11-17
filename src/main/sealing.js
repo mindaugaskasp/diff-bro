@@ -16,6 +16,9 @@ import {
   sign,
   verify
 } from 'crypto'
+import { MAX_TTL_MS, ttlError } from './sealingTtl.js'
+
+export { MAX_TTL_MS, ttlError }
 
 // The ONLY versions this release writes/accepts — exact-match rejection retires
 // a vulnerable format by a version bump (HKDF_INFO + GCM AAD are tied to
@@ -27,7 +30,6 @@ export const KEY_FORMAT = 'diffbro-key/2'
 export const SHARE_FORMAT = 'diffbro-share/4'
 // Enforced when signing AND when opening. Keep in step with vaultStore's
 // MAX_KEEP_HOURS. With no replay protection by design, this IS the replay window.
-export const MAX_TTL_MS = 7 * 24 * 3600 * 1000
 
 // Key FILES stay importable across the bump: the fingerprint is always
 // RECOMPUTED at 128 bits on import, never trusted from the file. Shares are
@@ -134,15 +136,6 @@ export function createIdentityKeys() {
     fingerprint: fingerprint(pubKeys.sign, pubKeys.box)
   }
   return { priv, pub }
-}
-
-// 'expired' | 'invalid-ttl' | null — enforced when signing AND when opening,
-// so a shared diff can never outlive MAX_TTL_MS anywhere.
-export function ttlError(entry, now = Date.now()) {
-  if (!Number.isFinite(entry?.createdAt) || !Number.isFinite(entry?.expiresAt)) return 'invalid-ttl'
-  if (entry.expiresAt <= now) return 'expired'
-  if (entry.expiresAt - entry.createdAt > MAX_TTL_MS) return 'invalid-ttl'
-  return null
 }
 
 const deriveKey = (ecdhSecret, salt) =>

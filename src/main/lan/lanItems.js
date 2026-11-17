@@ -1,3 +1,5 @@
+import { verifyAck } from './acks'
+
 export const SNIPPET_TTL_MS = 7 * 24 * 60 * 60 * 1000
 export const ITEM_LIMITS = { name: 512, content: 5 * 1024 * 1024, language: 40, tags: 20, tag: 40 }
 
@@ -41,6 +43,8 @@ export function isValidItemEntry(entry) {
   return entry.kind === 'diff' && !!entry.snapshot && typeof entry.snapshot === 'object'
 }
 
+export const itemHeader = (fp) => ({ type: 'item', fp })
+
 export const itemSummary = ({ id, receivedAt }, { entry, from, fp }) => ({
   id,
   kind: entry.kind,
@@ -61,10 +65,12 @@ export function resolveRecipients(fps, trusted) {
   return recipients.some((r) => !r) ? { error: 'unknown-recipient' } : { recipients }
 }
 
-export const ackResult = (header) =>
-  header?.type === 'item-ack' && header.ok
-    ? { ok: true }
-    : { ok: false, reason: header?.reason ?? 'refused' }
+export function verifiedAck(header, { signKey, digest }) {
+  if (header?.type !== 'item-ack') return { ok: false, reason: 'refused' }
+  const fields = { kind: 'item', digest, ok: header.ok, reason: header.reason }
+  if (!verifyAck(signKey, fields, header.sig)) return { ok: false, reason: 'unverified' }
+  return header.ok ? { ok: true } : { ok: false, reason: header.reason ?? 'refused' }
+}
 
 export function deliveryReport(results, trusted) {
   const label = (fp) => trusted.find((t) => t.fingerprint === fp)?.label ?? fp

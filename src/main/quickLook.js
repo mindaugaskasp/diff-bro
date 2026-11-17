@@ -134,6 +134,7 @@ function logDiag(event, displays, cursor, launcher) {
   }
   appendLog({
     source: 'quicklook',
+    level: 'info',
     message: `launcher ${event}`,
     context: launcherDiagnostics({ event, displays, cursor, main, launcher })
   })
