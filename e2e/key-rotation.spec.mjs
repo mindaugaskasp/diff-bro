@@ -2,12 +2,15 @@ import {
   test,
   expect,
   openMenu,
-  launchApp,
+  launchApp as launchWithLan,
+  withoutLan,
   freshUserDataDir,
   firstReadyPage,
   stubSaveDialog,
   stubOpenDialog
 } from './fixtures.mjs'
+
+const launchApp = (dir) => launchWithLan(withoutLan(dir))
 import { mkdtempSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

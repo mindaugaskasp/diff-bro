@@ -23,6 +23,14 @@ export const SEEN_ONBOARDING = {
   tips: { on: false }
 }
 
+// Sharing on the network is on by default and disables people who are not on it in
+// the Share dialog; the file and email sharing specs run with it off.
+export const withoutLan = (dir) => {
+  writeFileSync(join(dir, 'lan.json'), JSON.stringify({ enabled: false }))
+  return dir
+}
+export const turnLanOff = (page) => page.evaluate(() => window.api.lanUpdate({ enabled: false }))
+
 export const freshUserDataDir = ({ tips = false } = {}) => {
   const dir = mkdtempSync(join(tmpdir(), 'diffbro-e2e-'))
   if (!tips) writeFileSync(join(dir, 'onboarding.json'), JSON.stringify(SEEN_ONBOARDING))

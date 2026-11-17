@@ -12,6 +12,9 @@ import {
   snippetMoreMenu
 } from './fixtures.mjs'
 
+// Two launches and pairing both ways before the test proper starts.
+test.describe.configure({ timeout: 90_000 })
+
 // Unique per run: parallel workers share the network, and each starts its own Ana and Ben.
 const RUN = Math.random().toString(36).slice(2, 7)
 

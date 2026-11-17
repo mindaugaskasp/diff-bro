@@ -7,17 +7,13 @@ import {
   expect,
   launchApp as launchWithLan,
   freshUserDataDir,
+  withoutLan,
   firstReadyPage,
   stubSaveDialog,
   showPanel
 } from './fixtures.mjs'
 
-// With sharing on the network on, people not on it are disabled in the Share dialog;
-// this file covers file and email sharing, so it runs with network sharing off.
-const launchApp = (dir) => {
-  writeFileSync(join(dir, 'lan.json'), JSON.stringify({ enabled: false }))
-  return launchWithLan(dir)
-}
+const launchApp = (dir) => launchWithLan(withoutLan(dir))
 
 // The hand-off only exists across the IPC boundary: main seals the file, builds
 // the mailto:, confirms, and hands both to the OS. Nothing about it is visible

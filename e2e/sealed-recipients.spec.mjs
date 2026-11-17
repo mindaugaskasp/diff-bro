@@ -1,4 +1,4 @@
-import { test, expect, openMenu, stubSaveDialog } from './fixtures.mjs'
+import { test, expect, openMenu, stubSaveDialog, turnLanOff } from './fixtures.mjs'
 import { generateKeyPairSync } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -53,6 +53,7 @@ async function saveAndSeal(page, name) {
 }
 
 test('removing a trusted key shows what has already been sealed for it', async ({ app, page }) => {
+  await turnLanOff(page)
   const dir = mkdtempSync(join(tmpdir(), 'diffbro-sealed-'))
   try {
     const fp = await trustAPeer(page, PEER)
@@ -79,6 +80,7 @@ test('removing a trusted key shows what has already been sealed for it', async (
 // Cancelling the save dialog writes no file, so nothing was shared — and the
 // dialog must not claim otherwise.
 test('a cancelled seal leaves no record behind', async ({ app, page }) => {
+  await turnLanOff(page)
   await trustAPeer(page, PEER)
   await app.evaluate(({ dialog }) => {
     dialog.showSaveDialog = async () => ({ canceled: true })
