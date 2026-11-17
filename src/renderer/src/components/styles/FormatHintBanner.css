@@ -43,7 +43,7 @@
 .hint.invalid .format {
   background: var(--danger-bg);
   border-color: var(--danger-border);
-  color: var(--danger-text);
+  color: var(--text-on-danger);
 }
 .dismiss {
   background: none;

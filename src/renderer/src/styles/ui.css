@@ -251,13 +251,13 @@
 .btn-destructive {
   background: var(--danger-bg);
   border-color: var(--danger-bg);
-  color: var(--danger-text);
+  color: var(--text-on-danger);
   font-weight: 600;
 }
 .btn-destructive:hover:not(:disabled) {
   background: var(--danger-bg);
   border-color: var(--danger-border);
-  color: var(--danger-text);
+  color: var(--text-on-danger);
   filter: brightness(1.08);
 }
 /* How many of the things behind this button are set — the View options a reader
@@ -761,7 +761,7 @@ button.tag-chip:hover .usb-tct {
 }
 .state-chip.expired {
   background: var(--danger-bg);
-  color: var(--danger-text);
+  color: var(--text-on-danger);
 }
 /* The row a create just made. Not the .key.added idiom (TrustedKeyRow.css): a
    sidebar row has --bg-hover, so a resting wash competes with HOVER rather than

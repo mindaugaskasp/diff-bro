@@ -40,21 +40,6 @@
     "ratio": 3.09
   },
   {
-    "theme": "dark",
-    "where": "FormatHintBanner.css .hint.invalid .format",
-    "ratio": 3.35
-  },
-  {
-    "theme": "light",
-    "where": "FormatHintBanner.css .hint.invalid .format",
-    "ratio": 3.35
-  },
-  {
-    "theme": "nord",
-    "where": "FormatHintBanner.css .hint.invalid .format",
-    "ratio": 3.55
-  },
-  {
     "theme": "meridian",
     "where": "FormatToolbar.css .fmt-btn:hover",
     "ratio": 3.36
@@ -220,36 +205,6 @@
     "ratio": 3.09
   },
   {
-    "theme": "dark",
-    "where": "ui.css .btn-destructive",
-    "ratio": 3.35
-  },
-  {
-    "theme": "light",
-    "where": "ui.css .btn-destructive",
-    "ratio": 3.35
-  },
-  {
-    "theme": "nord",
-    "where": "ui.css .btn-destructive",
-    "ratio": 3.55
-  },
-  {
-    "theme": "dark",
-    "where": "ui.css .btn-destructive:hover:not(:disabled)",
-    "ratio": 3.35
-  },
-  {
-    "theme": "light",
-    "where": "ui.css .btn-destructive:hover:not(:disabled)",
-    "ratio": 3.35
-  },
-  {
-    "theme": "nord",
-    "where": "ui.css .btn-destructive:hover:not(:disabled)",
-    "ratio": 3.55
-  },
-  {
     "theme": "sepia",
     "where": "ui.css .sidebar-toggle",
     "ratio": 3.93
@@ -258,20 +213,5 @@
     "theme": "solar",
     "where": "ui.css .sidebar-toggle",
     "ratio": 4.36
-  },
-  {
-    "theme": "dark",
-    "where": "ui.css .state-chip.expired",
-    "ratio": 3.35
-  },
-  {
-    "theme": "light",
-    "where": "ui.css .state-chip.expired",
-    "ratio": 3.35
-  },
-  {
-    "theme": "nord",
-    "where": "ui.css .state-chip.expired",
-    "ratio": 3.55
   }
 ]

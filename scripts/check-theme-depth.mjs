@@ -124,6 +124,8 @@ const RULES = [
   // text by WCAG. The component-pair pass below already held it to 4.5, so the
   // two disagreed and 41 entries sat in the baseline because of it.
   { key: 'onAccent/accent', a: 'text-on-accent', b: 'accent', min: 4.5, kind: 'text' },
+  // The destructive label (Delete, Stop sharing) is a button label like the primary's.
+  { key: 'onDanger/danger', a: 'text-on-danger', b: 'danger-bg', min: 4.5, kind: 'text' },
   // Surfaces: the raised card must lift off the canvas, chrome off the base.
   { key: 'raised/canvas', a: 'bg-raised', b: 'bg-canvas', min: 1.04, kind: 'surface' },
   { key: 'panel/bg', a: 'bg-panel', b: 'bg', min: 1.03, kind: 'surface' },
