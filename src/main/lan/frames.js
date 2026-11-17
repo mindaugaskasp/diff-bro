@@ -11,11 +11,7 @@ const SHAPES = {
   'add-reply': { key: isKey, name: (v) => isText(v, 64), nonce: (v) => B64_32.test(v) },
   'add-reveal': { nonce: (v) => B64_32.test(v) },
   'add-result': { result: (v) => ['matched', 'mismatched', 'cancelled', 'expired'].includes(v) },
-  item: {
-    kind: (v) => v === 'diff' || v === 'snippet',
-    name: (v) => isText(v, 512),
-    fp: (v) => FP.test(v)
-  },
+  item: { fp: (v) => FP.test(v) },
   'item-ack': {
     ok: (v) => typeof v === 'boolean',
     reason: (v) => v === undefined || isText(v, 64)

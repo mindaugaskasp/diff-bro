@@ -6,6 +6,7 @@ import {
   cleanFps,
   deliveryReport,
   isValidItemEntry,
+  itemHeader,
   itemSummary,
   resolveRecipients,
   snippetEntry
@@ -122,7 +123,7 @@ async function sendItem(req) {
   const sender = { priv, fingerprint: pub.fingerprint }
   const body = Buffer.from(JSON.stringify(sealEntry(entry, sender, resolved.recipients)))
   if (body.length > FRAME_LIMITS.item) return { error: 'too-large' }
-  const header = { type: 'item', kind: entry.kind, name: entry.name, fp: pub.fingerprint }
+  const header = itemHeader(pub.fingerprint)
   const results = await Promise.all(fps.map((fp) => deliver(fp, header, body)))
   return deliveryReport(results, trusted)
 }

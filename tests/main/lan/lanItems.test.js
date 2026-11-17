@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   ITEM_LIMITS,
+  itemHeader,
   ackResult,
   cleanFps,
   deliveryReport,
@@ -136,5 +137,11 @@ describe('sending helpers', () => {
       sent: ['Ana'],
       failed: [{ name: 'Ben', reason: 'offline' }]
     })
+  })
+})
+
+describe('itemHeader', () => {
+  it('carries the sender and nothing about the item', () => {
+    expect(itemHeader('ab'.repeat(16))).toEqual({ type: 'item', fp: 'ab'.repeat(16) })
   })
 })

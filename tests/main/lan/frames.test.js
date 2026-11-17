@@ -26,7 +26,7 @@ describe('encode and read', () => {
 
   it('round-trips a frame with a body, delivered in pieces', () => {
     const body = Buffer.from(JSON.stringify({ sealed: 'x'.repeat(5000) }))
-    const header = { type: 'item', kind: 'snippet', name: 'nginx reload', fp: FP }
+    const header = { type: 'item', fp: FP }
     const bytes = encodeFrame(header, body)
     const pieces = [bytes.subarray(0, 3), bytes.subarray(3, 40), bytes.subarray(40)]
     const [frame] = read(pieces)
@@ -46,7 +46,7 @@ describe('encode and read', () => {
 
 describe('refusals', () => {
   it('lets the caller refuse a frame on its header, before the body is buffered', () => {
-    const header = Buffer.from(JSON.stringify({ type: 'item', kind: 'diff', name: 'n', fp: FP }))
+    const header = Buffer.from(JSON.stringify({ type: 'item', fp: FP }))
     const parts = [Buffer.alloc(4), header, Buffer.alloc(4)]
     parts[0].writeUInt32BE(header.length)
     parts[2].writeUInt32BE(FRAME_LIMITS.item)
@@ -70,7 +70,7 @@ describe('refusals', () => {
   })
 
   it('refuses an item body over the item cap', () => {
-    const header = Buffer.from(JSON.stringify({ type: 'item', kind: 'diff', name: 'n', fp: FP }))
+    const header = Buffer.from(JSON.stringify({ type: 'item', fp: FP }))
     const parts = [Buffer.alloc(4), header, Buffer.alloc(4)]
     parts[0].writeUInt32BE(header.length)
     parts[2].writeUInt32BE(FRAME_LIMITS.item + 1)
@@ -91,13 +91,23 @@ describe('refusals', () => {
   })
 })
 
+describe('an item header names nothing but the sender', () => {
+  it('accepts the sender fingerprint alone', () => {
+    expect(validateHeader({ type: 'item', fp: FP })).toBe(true)
+  })
+
+  it.each([
+    [{ type: 'item', name: 'prod db credentials', fp: FP }],
+    [{ type: 'item', kind: 'snippet', fp: FP }]
+  ])('refuses %j: what is inside travels sealed', (h) => expect(validateHeader(h)).toBe(false))
+})
+
 describe('validateHeader', () => {
   it.each([
     [{ type: 'add-request', key: KEY, name: 'Ben', commit: COMMIT }],
     [{ type: 'add-reply', key: KEY, name: 'Ana', nonce: NONCE }],
     [{ type: 'add-reveal', nonce: NONCE }],
     [{ type: 'add-result', result: 'mismatched' }],
-    [{ type: 'item', kind: 'diff', name: 'config', fp: FP }],
     [{ type: 'item-ack', ok: false, reason: 'not-trusted' }],
     [{ type: 'revoke', fp: FP, at: 1, sig: 'c2ln' }]
   ])('accepts %j', (h) => expect(validateHeader(h)).toBe(true))
@@ -109,9 +119,7 @@ describe('validateHeader', () => {
     [{ type: 'add-request', key: KEY, name: 'x'.repeat(65), commit: COMMIT }],
     [{ type: 'add-request', key: KEY, name: 'Ben', commit: 'short' }],
     [{ type: 'add-result', result: 'maybe' }],
-    [{ type: 'item', kind: 'secret', name: 'n', fp: FP }],
-    [{ type: 'item', kind: 'diff', name: 'x'.repeat(513), fp: FP }],
-    [{ type: 'item', kind: 'diff', name: 'n', fp: 'zz' }],
+    [{ type: 'item', fp: 'zz' }],
     [{ type: 'revoke', fp: FP, at: 'yesterday', sig: 'c2ln' }],
     [{ type: 'add-reveal', nonce: NONCE, __proto__: { polluted: true }, extra: 1 }]
   ])('refuses %j', (h) => expect(validateHeader(h)).toBe(false))

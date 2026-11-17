@@ -41,6 +41,8 @@ export function isValidItemEntry(entry) {
   return entry.kind === 'diff' && !!entry.snapshot && typeof entry.snapshot === 'object'
 }
 
+export const itemHeader = (fp) => ({ type: 'item', fp })
+
 export const itemSummary = ({ id, receivedAt }, { entry, from, fp }) => ({
   id,
   kind: entry.kind,
