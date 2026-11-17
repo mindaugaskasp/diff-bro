@@ -12,6 +12,7 @@ const snapshot = (over = {}) => ({
   ...over
 })
 
+const ANA = { fp: 'aa'.repeat(16), name: 'Ana' }
 let changed
 let paired
 let arrived
@@ -40,6 +41,7 @@ beforeEach(async () => {
     lanAdd: vi.fn(async () => ({ ok: true, id: 'p1' })),
     lanSubmitCode: vi.fn(async () => ({ ok: true, matched: true })),
     lanCancel: vi.fn(async () => ({ ok: true })),
+    lanConfirm: vi.fn(async () => ({ ok: true })),
     lanPasteCode: vi.fn(async () => ({ code: 'K7Q4ZP' })),
     lanItems: vi.fn(async () => items),
     onLanItemArrived: vi.fn((handler) => (arrived = handler)),
@@ -106,8 +108,6 @@ describe('lan store', () => {
 })
 
 describe('adding someone', () => {
-  const ANA = { fp: 'aa'.repeat(16), name: 'Ana' }
-
   it('shows the add dialog at once, then follows main’s stages', async () => {
     const lan = useLanStore()
     await lan.init()
@@ -151,11 +151,78 @@ describe('adding someone', () => {
   it('dismissing a result clears it without telling main', async () => {
     const lan = useLanStore()
     await lan.init()
-    paired({ id: 'p3', role: 'holder', stage: 'added-you', fp: ANA.fp, name: 'Ana' })
+    paired({ id: 'p3', role: 'adder', stage: 'declined', fp: ANA.fp, name: 'Ana' })
     lan.dismissPairing()
     expect(lan.pairing).toBeNull()
     expect(window.api.lanCancel).not.toHaveBeenCalled()
     expect(await lan.pasteCode()).toEqual({ code: 'K7Q4ZP' })
+  })
+})
+
+describe('the confirm step', () => {
+  const CONFIRM = {
+    id: 'p4',
+    role: 'holder',
+    stage: 'confirm',
+    fp: ANA.fp,
+    name: 'Ana',
+    confirm: '4F7K'
+  }
+
+  it('shows the holder the confirm step, even while popups are silenced', async () => {
+    const lan = useLanStore()
+    await lan.init()
+    lan.popups = false
+    paired({ ...CONFIRM, stage: 'show-code', code: 'K7Q4ZP' })
+    expect(lan.requests.map((r) => r.id)).toEqual(['p4'])
+    paired(CONFIRM)
+    expect(lan.requests).toEqual([])
+    expect(lan.pairing).toMatchObject({ stage: 'confirm', confirm: '4F7K' })
+  })
+
+  it('adding tells main and waits for it to say added', async () => {
+    const lan = useLanStore()
+    await lan.init()
+    paired(CONFIRM)
+    lan.confirmAdd(true)
+    expect(window.api.lanConfirm).toHaveBeenCalledWith('p4', true)
+    expect(lan.pairing).toMatchObject({ stage: 'confirm' })
+  })
+
+  it('declining closes it at once', async () => {
+    const lan = useLanStore()
+    await lan.init()
+    paired(CONFIRM)
+    lan.confirmAdd(false)
+    expect(window.api.lanConfirm).toHaveBeenCalledWith('p4', false)
+    expect(lan.pairing).toBeNull()
+  })
+})
+
+describe('nearby people', () => {
+  it('lists people on the network you have not added, only while sharing is on and online', async () => {
+    const lan = useLanStore()
+    await lan.init()
+    lan.applySnapshot({
+      enabled: true,
+      online: true,
+      peers: [
+        { fp: ANA.fp, name: 'Ana', trusted: true, version: 2 },
+        { fp: 'bb'.repeat(16), name: 'Ben', trusted: false, version: 2 }
+      ]
+    })
+    expect(lan.nearby.map((p) => p.name)).toEqual(['Ben'])
+    lan.applySnapshot({ online: false })
+    expect(lan.nearby).toEqual([])
+  })
+
+  it('remembers who you just added, but not who added you', async () => {
+    const lan = useLanStore()
+    await lan.init()
+    paired({ id: 'p5', role: 'holder', stage: 'added', fp: ANA.fp, name: 'Ana' })
+    expect(lan.lastAdded).toEqual({ fp: ANA.fp, mine: false })
+    paired({ id: 'p6', role: 'adder', stage: 'added', fp: ANA.fp, name: 'Ana' })
+    expect(lan.lastAdded).toEqual({ fp: ANA.fp, mine: true })
   })
 })
 

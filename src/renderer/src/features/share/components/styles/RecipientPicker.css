@@ -162,3 +162,15 @@
   background: var(--accent);
   border-color: var(--accent);
 }
+
+.nearby-head {
+  padding: var(--space-2) calc(var(--space-1) + var(--space-2)) var(--space-1);
+  font-size: var(--font-sm);
+  color: var(--text-meta);
+}
+.nearby-row {
+  cursor: default;
+}
+.nearby-row:hover {
+  background: transparent;
+}

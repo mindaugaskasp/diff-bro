@@ -2,6 +2,7 @@
 import { computed, onMounted } from 'vue'
 import AddCodeDialog from './AddCodeDialog.vue'
 import ShowCodeDialog from './ShowCodeDialog.vue'
+import ConfirmCodeDialog from './ConfirmCodeDialog.vue'
 import PairingResultDialog from './PairingResultDialog.vue'
 import ItemOfferDialog from './ItemOfferDialog.vue'
 import StopSharingDialog from './StopSharingDialog.vue'
@@ -18,6 +19,7 @@ const isEntering = computed(() => ['connecting', 'enter-code'].includes(stage.va
   <template v-if="lan.pairing">
     <AddCodeDialog v-if="lan.pairing.role === 'adder' && isEntering" />
     <ShowCodeDialog v-else-if="stage === 'show-code'" />
+    <ConfirmCodeDialog v-else-if="stage === 'confirming' || stage === 'confirm'" />
     <PairingResultDialog v-else-if="stage !== 'added' && stage !== 'waiting'" />
   </template>
   <ItemOfferDialog v-else-if="lan.currentOffer" />

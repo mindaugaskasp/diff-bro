@@ -633,7 +633,59 @@ async function seedClaudeInbox(page, userDataDir) {
   claudeInboxSeeded = true
 }
 
+async function patchLan(page, patch) {
+  await page.evaluate((p) => {
+    const pinia = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia
+    Object.assign(pinia._s.get('lan'), p)
+  }, patch)
+}
+
+const NEARBY_PEERS = [
+  { fp: 'b'.repeat(64), name: 'Ben Okafor', trusted: false, version: 2 },
+  { fp: 'c'.repeat(64), name: 'Chen Liu', trusted: false, version: 1 }
+]
+
 const SURFACES = [
+  {
+    name: 'lan-confirm',
+    open: async (page) => {
+      const pairing = { id: 'x', role: 'holder', stage: 'confirm', name: 'Ana', confirm: '4F7K' }
+      await patchLan(page, { pairing: { ...pairing, expiresAt: Date.now() + 100_000 } })
+      await page.getByTestId('lan-confirm-code').waitFor()
+    },
+    close: async (page) => {
+      await patchLan(page, { pairing: null })
+      await page.getByTestId('lan-confirm-code').waitFor({ state: 'detached' })
+    },
+    probes: {
+      'confirm code': ['[data-testid="lan-confirm-code"] .code', TEXT],
+      note: ['.show-code .dialog-note', TEXT]
+    }
+  },
+  {
+    name: 'share-nearby',
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Paste mode' }).click()
+      await page.getByPlaceholder('Paste or type the original text').fill('a\n')
+      await page.getByPlaceholder('Paste or type the changed text').fill('b\n')
+      await page.getByRole('button', { name: 'Compare', exact: true }).click()
+      await page.getByRole('button', { name: 'Share', exact: true }).click()
+      const save = page.getByRole('dialog', { name: 'Share diff — step 1 of 2: save it' })
+      await save.getByRole('button', { name: 'Next: choose recipient' }).click()
+      await patchLan(page, { enabled: true, online: true, peers: NEARBY_PEERS })
+      await page.getByTestId('share-nearby').waitFor()
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await page.getByTestId('share-nearby').waitFor({ state: 'detached' })
+      await clearComparison(page)
+    },
+    probes: {
+      heading: ['.nearby-head', TEXT],
+      name: ['.nearby-row:not(.off) .rc-name', TEXT],
+      'needs update': ['.nearby-row.off .rc-net', DIM]
+    }
+  },
   {
     name: 'settings-network',
     open: async (page) => {

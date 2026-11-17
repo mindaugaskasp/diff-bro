@@ -8,7 +8,8 @@ import {
   isRevealValid,
   newNonce,
   normalizeCode,
-  pairingCode
+  pairingCode,
+  confirmCode
 } from '../../../src/main/lan/pairingCode'
 
 const parts = () => ({
@@ -89,5 +90,21 @@ describe('typed and pasted codes', () => {
 
   it('formats in two groups of three', () => {
     expect(formatCode('K7Q4ZP')).toBe('K7Q 4ZP')
+  })
+})
+
+describe('confirm code', () => {
+  it('is four characters of the code alphabet, the same on both sides for the same pairing code', () => {
+    const code = confirmCode('K7Q4ZP')
+    expect(code).toMatch(/^[23456789ABCDEFGHJKMNPQRSTVWXYZ]{4}$/)
+    expect(confirmCode('k7q 4zp')).toBe(code)
+  })
+
+  it('differs when the pairing code differs, as it does when a key was swapped in the middle', () => {
+    expect(confirmCode('K7Q4ZP')).not.toBe(confirmCode('K7Q4ZR'))
+  })
+
+  it('is not the pairing code read again', () => {
+    expect('K7Q4ZP'.startsWith(confirmCode('K7Q4ZP'))).toBe(false)
   })
 })

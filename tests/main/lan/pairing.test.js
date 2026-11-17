@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { PAIRING_MS, REVEAL_MS, createPairing } from '../../../src/main/lan/pairing'
-import { formatCode, normalizeCode } from '../../../src/main/lan/pairingCode'
+import { confirmCode, formatCode, normalizeCode } from '../../../src/main/lan/pairingCode'
 
 const flush = () => new Promise((r) => setTimeout(r, 0))
 
@@ -110,15 +110,58 @@ describe('adding someone', () => {
     expect(shown.expiresAt).toBe(1000 + PAIRING_MS)
   })
 
-  it('stores the holder’s key when the code matches, and tells the holder', async () => {
+  it('a correct code stores nothing yet, and both screens show the same confirm code', async () => {
     const { ana, ben, started } = await startAdding()
     const code = formatCode(ana.last().code).toLowerCase()
     expect(await ben.pairing.submitCode(started.id, code)).toEqual({ ok: true, matched: true })
     await flush()
-    expect(ben.stored).toEqual([{ key: { text: `key-${A}` }, keyFp: A, label: 'Ana' }])
-    expect(ben.last().stage).toBe('added')
-    expect(ana.last()).toMatchObject({ stage: 'added-you', name: 'Ben', fp: B })
+    expect(ben.stored).toEqual([])
     expect(ana.stored).toEqual([])
+    const confirm = confirmCode(code)
+    expect(ben.last()).toMatchObject({ role: 'adder', stage: 'confirming', confirm, name: 'Ana' })
+    expect(ana.last()).toMatchObject({
+      role: 'holder',
+      stage: 'confirm',
+      confirm,
+      name: 'Ben',
+      fp: B
+    })
+  })
+
+  it('the holder adding stores both keys at once', async () => {
+    const { ana, ben, started } = await startAdding()
+    await ben.pairing.submitCode(started.id, ana.last().code)
+    await flush()
+    expect(await ana.pairing.confirm(ana.last().id, true)).toEqual({ ok: true })
+    await flush()
+    expect(ana.stored).toEqual([{ key: { text: `key-${B}` }, keyFp: B, label: 'Ben' }])
+    expect(ben.stored).toEqual([{ key: { text: `key-${A}` }, keyFp: A, label: 'Ana' }])
+    expect(ana.last().stage).toBe('added')
+    expect(ben.last().stage).toBe('added')
+  })
+
+  it('the holder declining stores nothing on either side', async () => {
+    const { ana, ben, started } = await startAdding()
+    await ben.pairing.submitCode(started.id, ana.last().code)
+    await flush()
+    const id = ana.last().id
+    expect(await ana.pairing.confirm(id, false)).toEqual({ ok: true })
+    await flush()
+    expect(ana.stored).toEqual([])
+    expect(ben.stored).toEqual([])
+    expect(ben.last().stage).toBe('declined')
+    expect(await ana.pairing.confirm(id, true)).toEqual({ error: 'no-request' })
+  })
+
+  it('running out of time at the confirm step stores nothing', async () => {
+    const { ana, ben, started } = await startAdding()
+    await ben.pairing.submitCode(started.id, ana.last().code)
+    await flush()
+    ana.timers.fire(PAIRING_MS)
+    await flush()
+    expect(ana.stored).toEqual([])
+    expect(ben.stored).toEqual([])
+    expect(ben.last().stage).toBe('expired')
   })
 
   it('a wrong code stores nothing and ends it on both sides', async () => {
@@ -262,6 +305,9 @@ describe('a hostile network', () => {
     const started = await ben.pairing.add(A, 'Ana')
     await flush()
     await ben.pairing.submitCode(started.id, ana.last().code)
+    await flush()
+    await ana.pairing.confirm(ana.last().id, true)
+    await flush()
     expect(ben.stored).toEqual([{ key: { text: `key-${A}` }, keyFp: A, label: 'Ana' }])
   })
 
@@ -321,14 +367,5 @@ describe('when adding fails, the log says why', () => {
     await ben.pairing.add(A, 'Ana')
     await flush()
     expect(ben.logged.join('\n')).toMatch(/closed before/)
-  })
-})
-
-describe('adding back', () => {
-  it('tells the holder they were added back when it already trusts the adder, with no new Add back', async () => {
-    const { ana, ben, started } = await startAdding({ isTrusted: async (fp) => fp === B })
-    await ben.pairing.submitCode(started.id, ana.last().code)
-    await flush()
-    expect(ana.last()).toMatchObject({ stage: 'added-back', name: 'Ben', fp: B })
   })
 })

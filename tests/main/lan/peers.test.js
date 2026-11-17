@@ -128,3 +128,15 @@ describe('peerRows', () => {
     ])
   })
 })
+
+describe('versions', () => {
+  it('lists each peer with the protocol version it announced', () => {
+    const table = createPeerTable()
+    table.saw(seen(A, { version: 1 }), 0)
+    table.saw(seen(B, { name: 'Ben', version: 2, address: '192.168.1.6' }), 0)
+    expect(table.list()).toEqual([
+      { fp: A, name: 'Ana', version: 1 },
+      { fp: B, name: 'Ben', version: 2 }
+    ])
+  })
+})

@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { test, expect, openSettingsPage, launchApp, firstReadyPage } from './fixtures.mjs'
-import { addPeer, startPeer, stop } from './lanPeers.mjs'
+import { addPeer, confirmAdd, shareDiff, startPeer, stop, typeCode } from './lanPeers.mjs'
 
 // Two launches per test.
 test.describe.configure({ timeout: 90_000 })
@@ -30,10 +30,13 @@ test('the code copied on one screen and pasted on the other adds the key', async
     await expect(adding.getByTestId('lan-code-input')).toHaveValue(/^[2-9A-Z]{6}$/)
     await adding.getByRole('button', { name: 'Add', exact: true }).click()
     await expect(adding).toBeHidden()
+    const confirming = ana.page.getByRole('dialog', { name: `Add ${ben.name}?` })
+    await confirming.getByRole('button', { name: 'Add', exact: true }).click()
     await expect(anaRow.getByText('Trusted')).toBeVisible()
-    const back = ana.page.getByRole('dialog', { name: `${ben.name} added you` })
-    await expect(back).toBeVisible()
-    await expect(back.getByRole('button', { name: 'Add back' })).toBeVisible()
+    const anaSettings = await openSettingsPage(ana.page, 'Network')
+    await expect(
+      anaSettings.locator('.person', { hasText: ben.name }).getByText('Trusted')
+    ).toBeVisible()
   } finally {
     await stop(ana, ben)
   }
@@ -96,28 +99,45 @@ test('a key named before names were capped still adds, in both directions', asyn
   const ben = await startPeer('Ben')
   try {
     await addPeer(ben, ana)
-    await addPeer(ana, ben)
+    const anaSettings = await openSettingsPage(ana.page, 'Network')
+    await expect(
+      anaSettings.locator('.person', { hasText: ben.name }).getByText('Trusted')
+    ).toBeVisible()
   } finally {
     await stop(ana, ben)
   }
 })
 
-test('adding back ends it: neither side is asked to add the other again', async () => {
+test('declining at the confirm step adds no one on either screen', async () => {
+  const { ana, ben, anaRow } = await benAddsAna()
+  try {
+    const { confirming } = await typeCode(ben, ana)
+    await confirming.getByRole('button', { name: 'Decline' }).click()
+    await expect(ben.page.getByRole('dialog', { name: `${ana.name} declined` })).toBeVisible()
+    await expect(anaRow.getByText('Trusted')).toHaveCount(0)
+    const anaSettings = await openSettingsPage(ana.page, 'Network')
+    await expect(anaSettings.locator('.person', { hasText: ben.name })).toBeVisible()
+    await expect(
+      anaSettings.locator('.person', { hasText: ben.name }).getByText('Trusted')
+    ).toHaveCount(0)
+  } finally {
+    await stop(ana, ben)
+  }
+})
+
+test('someone nearby is added from the Share dialog, ticked, and the dialog stays', async () => {
   const ana = await startPeer('Ana')
   const ben = await startPeer('Ben')
   try {
-    await addPeer(ben, ana)
-    const settings = await openSettingsPage(ana.page, 'Network')
-    const benRow = settings.locator('.person', { hasText: ben.name })
-    await benRow.getByRole('button', { name: 'Add' }).click()
-    const shown = ben.page.getByRole('dialog', { name: `${ana.name} wants to add you` })
-    const code = (await shown.getByTestId('lan-code').innerText()).replace(/\W/g, '').slice(0, 6)
-    const adding = ana.page.getByRole('dialog', { name: `Add ${ben.name}` })
-    await adding.getByTestId('lan-code-input').fill(code)
-    await adding.getByRole('button', { name: 'Add', exact: true }).click()
-    await expect(benRow.getByText('Trusted')).toBeVisible()
-    await expect(ben.page.getByText(`${ana.name} added you back`)).toBeVisible()
-    await expect(ben.page.getByRole('dialog', { name: `${ana.name} added you` })).toHaveCount(0)
+    const share = await shareDiff(ben.page)
+    const nearby = share.getByTestId('share-nearby')
+    const anaRow = nearby.locator('li', { hasText: ana.name })
+    await expect(anaRow).toBeVisible({ timeout: 20_000 })
+    await anaRow.getByRole('button', { name: 'Add' }).click()
+    await confirmAdd(ben, ana)
+    await expect(share).toBeVisible()
+    await expect(share.getByRole('checkbox', { name: ana.name })).toBeChecked()
+    await expect(nearby.locator('li', { hasText: ana.name })).toHaveCount(0)
   } finally {
     await stop(ana, ben)
   }

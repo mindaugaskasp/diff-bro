@@ -9,6 +9,7 @@ export const lanApi = (ipcRenderer) => ({
   lanAdd: (fp) => ipcRenderer.invoke('lan:add', String(fp)),
   lanSubmitCode: (id, code) => ipcRenderer.invoke('lan:submitCode', String(id), String(code)),
   lanCancel: (id) => ipcRenderer.invoke('lan:cancel', String(id)),
+  lanConfirm: (id, accept) => ipcRenderer.invoke('lan:confirm', String(id), accept === true),
   lanPasteCode: () => ipcRenderer.invoke('lan:pasteCode'),
   onLanPairing: (handler) => {
     ipcRenderer.on('lan:pairing', (_e, view) => handler(view))

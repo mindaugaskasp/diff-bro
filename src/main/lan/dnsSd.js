@@ -1,8 +1,10 @@
 // In-repo rather than multicast-dns / bonjour-service: one service is a small subset, and rule 2 stays at zero.
 import { cleanPeerName } from './peerName'
+import { LAN_PROTOCOL_VERSION } from '../../shared/lanProtocol'
 
 export const SERVICE = '_diffbro._tcp.local'
 export const ANNOUNCE_TTL = 120
+const KNOWN_VERSIONS = ['1', '2']
 
 const TYPE = { PTR: 12, TXT: 16, SRV: 33 }
 const CLASS_IN = 1
@@ -69,7 +71,7 @@ const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/
 // replaces the packet's source with its own address, which has nothing listening.
 export function encodeAnnouncement({ fp, name, port, ttl = ANNOUNCE_TTL, addr }) {
   const instance = `${fp}.${SERVICE}`
-  const fields = ['v=1', `fp=${fp}`, `name=${fitName(name)}`, `port=${port}`]
+  const fields = [`v=${LAN_PROTOCOL_VERSION}`, `fp=${fp}`, `name=${fitName(name)}`, `port=${port}`]
   if (IPV4.test(addr ?? '')) fields.push(`addr=${addr}`)
   const txt = txtData(fields)
   const srv = Buffer.concat([u16(0), u16(0), u16(port), encodeName(`${fp}.local`)])
@@ -182,10 +184,11 @@ function txtEntries(rec) {
 
 function peerFromTxt(txt, ttl) {
   const port = Number(txt.port)
+  const version = KNOWN_VERSIONS.indexOf(txt.v) + 1
   const ok =
-    txt.v === '1' && FP.test(txt.fp ?? '') && Number.isInteger(port) && port > 0 && port < 65536
+    version > 0 && FP.test(txt.fp ?? '') && Number.isInteger(port) && port > 0 && port < 65536
   if (!ok || typeof txt.name !== 'string') return null
-  const peer = { fp: txt.fp, name: cleanPeerName(txt.name, NAME_CHARS), port, version: 1, ttl }
+  const peer = { fp: txt.fp, name: cleanPeerName(txt.name, NAME_CHARS), port, version, ttl }
   return IPV4.test(txt.addr ?? '') ? { ...peer, addr: txt.addr } : peer
 }
 

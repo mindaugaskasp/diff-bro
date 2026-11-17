@@ -2010,8 +2010,7 @@
       "noCodeOnClipboard": "The clipboard doesn’t hold a pairing code.",
       "add": "Add",
       "button": "Add",
-      "added": "Added {name}",
-      "addedBack": "{name} added you back"
+      "added": "Added {name}"
     },
     "code": {
       "title": "{name} wants to add you",
@@ -2020,6 +2019,14 @@
       "clickToCopy": "Click to copy",
       "copied": "Copied",
       "expires": "Expires in {time}"
+    },
+    "confirm": {
+      "waitingTitle": "Waiting for {name}",
+      "waitingNote": "Their screen should show this code.",
+      "title": "Add {name}?",
+      "note": "Check their screen shows the same code.",
+      "decline": "Decline",
+      "add": "Add"
     },
     "result": {
       "mismatch": "Code didn’t match",
@@ -2031,11 +2038,8 @@
       "cancelledNote": "They cancelled the request.",
       "connectionLost": "Connection lost",
       "connectionLostNote": "Check you’re both on the same network and try again.",
-      "addedYou": "{name} added you",
-      "addBackNote": "Add them too, so you can send to each other?",
-      "addBack": "Add back",
-      "notNow": "Not now",
-      "tryAgain": "Try again"
+      "tryAgain": "Try again",
+      "declined": "{name} declined"
     },
     "items": {
       "sharedSnippet": "{name} shared a snippet",
@@ -2099,7 +2103,8 @@
       "onNetwork": "On your network",
       "notOnNetwork": "Not on this network",
       "noNetwork": "Not connected to a network.",
-      "dropped": "No one picked is on your network now."
+      "dropped": "No one picked is on your network now.",
+      "nearby": "Nearby"
     },
     "stop": {
       "button": "Stop sharing",
@@ -2111,6 +2116,7 @@
       "toldTitle": "{name} stopped sharing with you",
       "toldBody": "You can’t send to them on the network any more. To share again, add them with a new code.",
       "ok": "OK"
-    }
+    },
+    "needsUpdate": "Needs update"
   }
 }

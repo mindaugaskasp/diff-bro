@@ -6,17 +6,16 @@ export function pairingResult({ role, stage }) {
     mismatch: adder ? 'lan.result.mismatchAdder' : 'lan.result.requestNewCode',
     expired: adder ? 'lan.result.expiredAdder' : 'lan.result.requestNewCode',
     cancelled: 'lan.result.cancelledNote',
-    'connection-lost': 'lan.result.connectionLostNote',
-    'added-you': 'lan.result.addBackNote'
+    'connection-lost': 'lan.result.connectionLostNote'
   }[stage]
   const title = {
     mismatch: 'lan.result.mismatch',
     expired: 'lan.result.expired',
     cancelled: 'lan.result.cancelled',
     'connection-lost': 'lan.result.connectionLost',
-    'added-you': 'lan.result.addedYou'
+    declined: 'lan.result.declined'
   }[stage]
   if (!title) return null
-  const action = stage === 'added-you' ? 'addBack' : adder && RETRY.includes(stage) ? 'retry' : null
+  const action = adder && RETRY.includes(stage) ? 'retry' : null
   return { title, note, action }
 }
