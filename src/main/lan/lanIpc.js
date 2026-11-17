@@ -7,7 +7,7 @@ import { createLan } from './lan'
 import { readComputerName } from './computerName'
 import { readLanSettings, writeLanSettings } from './lanStore'
 import { SILENCE_CHOICES, normalizeLanSettings, setPopups, silence } from './lanSettings'
-import { registerItemsIpc, setUpItems } from './itemsIpc'
+import { refreshTrustedFps, registerItemsIpc, setUpItems } from './itemsIpc'
 import { getIdentity } from '../share'
 import { cancelPairing, registerPairingIpc, setUpPairing } from './pairingIpc'
 import { readTrusted } from '../trustedKeys'
@@ -38,6 +38,7 @@ export async function lanSnapshot() {
 }
 
 export async function broadcastLan() {
+  await refreshTrustedFps()
   const snapshot = await lanSnapshot()
   for (const w of BrowserWindow.getAllWindows()) w.webContents.send('lan:changed', snapshot)
 }

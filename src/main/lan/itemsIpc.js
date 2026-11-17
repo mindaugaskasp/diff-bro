@@ -26,6 +26,8 @@ const send = (channel, payload) => {
 }
 
 let lan = null
+let trustedFps = new Set()
+const TRUST_REFRESH_MS = 30_000
 const limit = createRateLimit({ limit: 10, windowMs: 60_000 })
 
 async function openStored(record) {
@@ -127,9 +129,16 @@ async function sendItem(req) {
 
 export const forgetItemsFrom = (fp) => removeItemsFrom(inboxDir(), fp)
 
+export async function refreshTrustedFps() {
+  trustedFps = new Set((await readTrusted()).map((t) => t.fingerprint))
+}
+
 export function setUpItems(service) {
   lan = service
+  lan.accept('item', (header) => trustedFps.has(header.fp))
   lan.on('item', onItem)
+  refreshTrustedFps().catch(() => {})
+  setInterval(() => refreshTrustedFps().catch(() => {}), TRUST_REFRESH_MS)
 }
 
 export function registerItemsIpc() {
