@@ -39,7 +39,7 @@ function discard() {
 <template>
   <div
     v-if="proposalId"
-    class="proposal-bar band"
+    class="received-band band"
     role="region"
     :aria-label="$t('claude.bar.title')"
   >

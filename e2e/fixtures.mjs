@@ -23,6 +23,13 @@ export const SEEN_ONBOARDING = {
   tips: { on: false }
 }
 
+// Network sharing (on by default) disables offline people in the Share dialog.
+export const withoutLan = (dir) => {
+  writeFileSync(join(dir, 'lan.json'), JSON.stringify({ enabled: false }))
+  return dir
+}
+export const turnLanOff = (page) => page.evaluate(() => window.api.lanUpdate({ enabled: false }))
+
 export const freshUserDataDir = ({ tips = false } = {}) => {
   const dir = mkdtempSync(join(tmpdir(), 'diffbro-e2e-'))
   if (!tips) writeFileSync(join(dir, 'onboarding.json'), JSON.stringify(SEEN_ONBOARDING))

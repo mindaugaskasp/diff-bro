@@ -553,3 +553,27 @@ export {}
  * @property {string} page
  * @property {string|null} open
  */
+
+/**
+ * Something shared on the network, waiting under the bell. Main never sends the content here.
+ * @typedef {object} LanItem
+ * @property {string} id
+ * @property {'diff'|'snippet'} kind
+ * @property {string} name
+ * @property {string} from
+ * @property {string} fp
+ * @property {number} receivedAt
+ * @property {number} expiresAt
+ */
+
+/**
+ * One side of adding someone on the network, as main reports it.
+ * @typedef {object} LanPairingView
+ * @property {string} id
+ * @property {'adder'|'holder'} role
+ * @property {string} stage
+ * @property {string} fp
+ * @property {string} name
+ * @property {number} expiresAt
+ * @property {string} [code]
+ */

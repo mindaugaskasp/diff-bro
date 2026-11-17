@@ -201,6 +201,12 @@ describe('openSealed', () => {
     expect(res.entry).toEqual(entry)
   })
 
+  it('names the signer by fingerprint, not only by its local label', () => {
+    const { bob, bobTrustsAlice, seal } = makePeers()
+    const res = openSealed(seal(makeEntry()), bob, bobTrustsAlice, NOW)
+    expect(res.signer).toBe(bobTrustsAlice.find((t) => t.label === 'alice').fingerprint)
+  })
+
   it('carries the entry tags through the signed+encrypted roundtrip', () => {
     const { bob, bobTrustsAlice, seal } = makePeers()
     const res = openSealed(seal(makeEntry({ tags: ['release', 'json'] })), bob, bobTrustsAlice, NOW)

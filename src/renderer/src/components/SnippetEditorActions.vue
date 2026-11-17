@@ -3,13 +3,10 @@
 import { t } from '../i18n'
 import { computed } from 'vue'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
-import { useCopyAsFile } from '../composables/useCopyAsFile'
-import { snippetFile } from '../utils/copyAsFile'
+import { useSnippetDocMenu } from '../composables/useSnippetDocMenu'
 import { useSnippetStore } from '../stores/snippetStore'
 import AppIcon from './AppIcon.vue'
 import ActionMenu from './ActionMenu.vue'
-import { useDiffStore } from '../stores/diffStore'
-import { MOD } from '../keys'
 import { useClaudeStore } from '../features/claude'
 import { useTabsStore } from '../stores/tabsStore'
 
@@ -44,47 +41,7 @@ const emit = defineEmits([
 
 const { copied, flash } = useCopyFeedback()
 const copiedText = computed(() => copied.value === 'text')
-const { supported: canCopyFile, copyFile } = useCopyAsFile()
-async function copyAsFile() {
-  const draft = { name: props.name, content: props.content, secret: props.secret }
-  if (await copyFile(snippetFile({ ...draft, lang: props.language }))) {
-    useDiffStore().showNotice(t('snippetEditorActions.copiedAsFile'))
-  }
-}
-// Mermaid's formatter repairs pasted damage; it does not pretty-print.
-const formatItem = computed(() =>
-  props.language === 'mermaid'
-    ? { action: 'format', label: t('snippetEditorActions.repair'), icon: 'wrench' }
-    : { action: 'format', label: t('snippetEditorActions.format'), icon: 'braces' }
-)
-const menuItems = computed(() => {
-  const off = !props.hasContent || props.secret
-  return [
-    ...(props.snippetId
-      ? [{ action: 'history', label: t('snippetEditorActions.history'), icon: 'clock' }]
-      : []),
-    { ...formatItem.value, disabled: !props.canFormat },
-    ...(canCopyFile.value
-      ? [
-          {
-            action: 'copy-file',
-            label: t('snippetEditorActions.copyAsFile'),
-            icon: 'clipboard',
-            disabled: off
-          }
-        ]
-      : []),
-    {
-      action: 'save-file',
-      label: t('snippetEditorActions.saveAsFile'),
-      icon: 'save',
-      keys: `${MOD}+Alt+S`,
-      disabled: off
-    }
-  ]
-})
-const MENU_EMITS = { format: 'format', history: 'history', 'save-file': 'saveAsFile' }
-const onMenuAction = (action) => (action === 'copy-file' ? copyAsFile() : emit(MENU_EMITS[action]))
+const { items: menuItems, onAction: onMenuAction } = useSnippetDocMenu(props, emit)
 const store = useSnippetStore()
 const hasHistory = computed(
   () => (store.entries.find((e) => e.id === props.snippetId)?.history?.length ?? 0) > 0

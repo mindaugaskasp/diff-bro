@@ -17,8 +17,11 @@ const props = defineProps({
     required: true,
     validator: shaped('query', 'visible', 'picked', 'selected', 'toggle', 'handleKey')
   },
-  showEmail: { type: Boolean, default: false }
+  showEmail: { type: Boolean, default: false },
+  // A Set of fingerprints on the network, or null when sharing on the network is off.
+  reachable: { type: Object, default: null, validator: (v) => v === null || v instanceof Set }
 })
+const isOff = (fp) => !!props.reachable && !props.reachable.has(fp)
 defineEmits(['submit', 'close', 'add'])
 
 // The list keeps the height it had BEFORE any query, capped at what fits, so
@@ -93,15 +96,22 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
       </p>
       <ul v-else class="recipients">
         <li v-for="(r, i) in picker.visible.value" :key="r.fingerprint">
-          <label class="recipient" :class="{ active: picker.activeIndex.value === i }">
+          <label
+            class="recipient"
+            :class="{ active: picker.activeIndex.value === i, off: isOff(r.fingerprint) }"
+          >
             <input
               type="checkbox"
               :checked="picker.selected.value.includes(r.fingerprint)"
+              :disabled="isOff(r.fingerprint)"
               @change="picker.toggle(r.fingerprint)"
             />
             <span class="rc-name">{{ r.label }}</span>
             <span v-if="r.email" class="rc-mail">{{ r.email }}</span>
             <span v-else class="rc-mail none">{{ $t('share.recipientPicker.noAddress') }}</span>
+            <span v-if="reachable" class="rc-net" :class="{ on: !isOff(r.fingerprint) }">
+              {{ $t(isOff(r.fingerprint) ? 'lan.share.notOnNetwork' : 'lan.share.onNetwork') }}
+            </span>
           </label>
         </li>
       </ul>

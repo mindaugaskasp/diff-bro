@@ -1,0 +1,24 @@
+.offer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.offer-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.offer-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.offer-meta {
+  font-size: var(--font-sm);
+  color: var(--text-meta);
+}
+.spacer {
+  flex: 1;
+}

@@ -5,12 +5,15 @@ import { join } from 'node:path'
 import {
   test,
   expect,
-  launchApp,
+  launchApp as launchWithLan,
   freshUserDataDir,
+  withoutLan,
   firstReadyPage,
   stubSaveDialog,
   showPanel
 } from './fixtures.mjs'
+
+const launchApp = (dir) => launchWithLan(withoutLan(dir))
 
 // The hand-off only exists across the IPC boundary: main seals the file, builds
 // the mailto:, confirms, and hands both to the OS. Nothing about it is visible

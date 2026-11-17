@@ -1,0 +1,21 @@
+.bell {
+  position: relative;
+}
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-size: var(--font-2xs);
+  font-weight: 600;
+  line-height: 1;
+}

@@ -32,6 +32,7 @@ import {
   RemoveTrustedKeyDialog,
   RotateKeyDialog,
   ShareDiffDialog,
+  SendFailedDialog,
   ShareKeyDialog,
   TrustedKeysDialog,
   useShareStore
@@ -62,7 +63,8 @@ const openWith = useOpenWithStore()
   <PresentationExit v-if="ui.presenting" />
   <SaveDiffDialog v-if="store.showSaveDialog" />
   <ReplaceDiffDialog v-if="store.pendingReplace || store.pendingPick" />
-  <ShareDiffDialog v-if="share.shareEntryId || share.shareDraft" />
+  <ShareDiffDialog v-if="share.shareEntryId || share.shareDraft || share.shareSnippet" />
+  <SendFailedDialog v-if="share.sendFailure" />
   <EmailHandoffDialog v-if="email.draft" />
   <DiffImageDialog v-if="imageExport.imageEntry" />
   <TrustedKeysDialog v-if="share.showTrustedKeysDialog" />

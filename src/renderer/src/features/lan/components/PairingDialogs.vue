@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import AddCodeDialog from './AddCodeDialog.vue'
 import ShowCodeDialog from './ShowCodeDialog.vue'
 import PairingResultDialog from './PairingResultDialog.vue'
+import ItemOfferDialog from './ItemOfferDialog.vue'
 import { useLanStore } from '../lanStore'
 
 const lan = useLanStore()
@@ -17,4 +18,5 @@ const isEntering = computed(() => ['connecting', 'enter-code'].includes(stage.va
     <ShowCodeDialog v-else-if="stage === 'show-code'" />
     <PairingResultDialog v-else-if="stage !== 'added' && stage !== 'waiting'" />
   </template>
+  <ItemOfferDialog v-else-if="lan.currentOffer" />
 </template>

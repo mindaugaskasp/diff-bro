@@ -106,7 +106,8 @@
       "zoomIn": "Zoom In",
       "zoomOut": "Zoom Out",
       "resetZoom": "Reset Zoom",
-      "devTools": "Toggle Developer Tools"
+      "devTools": "Toggle Developer Tools",
+      "notifications": "Notifications"
     },
     "security": {
       "title": "Security",
@@ -2036,6 +2037,70 @@
       "addBack": "Add back",
       "notNow": "Not now",
       "tryAgain": "Try again"
+    },
+    "items": {
+      "sharedSnippet": "{name} shared a snippet",
+      "sharedDiff": "{name} shared a diff",
+      "deletesIn": "deletes itself in {n} day | deletes itself in {n} days",
+      "ofTotal": "{n} of {total}",
+      "decline": "Decline",
+      "open": "Open",
+      "gone": "That item is no longer available."
+    },
+    "silence": {
+      "label": "Silence for",
+      "choice": {
+        "1": "1 minute",
+        "5": "5 minutes",
+        "10": "10 minutes",
+        "30": "30 minutes",
+        "60": "1 hour",
+        "1440": "1 day",
+        "forever": "Forever"
+      },
+      "foreverWhy": "Until you turn popups back on in Settings",
+      "silencedFor": "Popups silenced for {duration}",
+      "offForever": "Popups off until you turn them back on in Settings"
+    },
+    "bell": {
+      "title": "Notifications",
+      "label": "Notifications | Notifications, {n} waiting | Notifications, {n} waiting",
+      "waiting": "{n} waiting",
+      "silenced": "Silenced until {time}",
+      "popupsOff": "Popups off",
+      "empty": "Nothing waiting",
+      "requestEnded": "{name}’s request ended",
+      "left": "{time} left",
+      "codeReady": "Your code is ready to share",
+      "askAgain": "Ask them to try again",
+      "showCode": "Show code"
+    },
+    "time": {
+      "justNow": "just now",
+      "minutes": "{n} min",
+      "hours": "{n} h",
+      "days": "{n} d"
+    },
+    "received": {
+      "from": "From {name}",
+      "discard": "Discard",
+      "saveSnippet": "Save snippet",
+      "saveDiff": "Save diff"
+    },
+    "share": {
+      "snippetMenu": "Share…",
+      "titleSnippet": "Share snippet",
+      "sendNow": "Send now",
+      "sending": "Sending…",
+      "email": "Email",
+      "sent": "Sent to {names}",
+      "failed": "Couldn’t send",
+      "couldNotSend": "Couldn’t send",
+      "couldNotSendNote": "They’re not on your network any more. Create a file or email it instead.",
+      "onNetwork": "On your network",
+      "notOnNetwork": "Not on this network",
+      "noNetwork": "Not connected to a network.",
+      "dropped": "No one picked is on your network now."
     }
   }
 }

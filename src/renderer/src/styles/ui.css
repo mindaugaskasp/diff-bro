@@ -1415,3 +1415,14 @@ button.tag-chip:hover .usb-tct {
 .link-btn:focus-visible {
   outline: 2px solid var(--focus-ring);
 }
+
+/* A tab holding something someone else sent: a Claude proposal or a network item. */
+.received-band {
+  flex: none;
+  gap: var(--space-3);
+  min-height: var(--band-row);
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid color-mix(in srgb, var(--hue-received) 70%, var(--text));
+  background: color-mix(in srgb, var(--hue-received) 10%, var(--bg));
+  color: var(--text);
+}

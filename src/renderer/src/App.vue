@@ -32,6 +32,7 @@ import TopBar from './components/TopBar.vue'
 import MenuBar from './components/MenuBar.vue'
 import { isMac } from './keys'
 import { ProposalBar, ProposalUndoNotice } from './features/claude'
+import { ReceivedBar } from './features/lan'
 import { useTabsStore } from './stores/tabsStore'
 import FormatHintBanner from './components/FormatHintBanner.vue'
 import DiskChangeNotice from './components/DiskChangeNotice.vue'
@@ -109,6 +110,7 @@ useWindowFocusRefresh()
         </transition>
         <TopBar />
         <ProposalBar />
+        <ReceivedBar />
         <!-- `capturing` hides the floating chrome that lives INSIDE the region the
            image export photographs. It is a class, not a v-if: removing the
            toast would start its fade-leave transition and the shutter would

@@ -4,7 +4,8 @@ import { join } from 'node:path'
 import {
   test,
   expect,
-  launchApp,
+  launchApp as launchWithLan,
+  withoutLan,
   freshUserDataDir,
   firstReadyPage,
   openMenu,
@@ -12,6 +13,8 @@ import {
   stubOpenDialog,
   showPanel
 } from './fixtures.mjs'
+
+const launchApp = (dir) => launchWithLan(withoutLan(dir))
 
 // Diffs sealed for this user live on the Diffs panel's Received tab.
 async function openReceived(page) {

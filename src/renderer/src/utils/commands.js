@@ -61,6 +61,7 @@ export const COMMANDS = {
   // Reopening the list is the way back after dismissing it. Guarded on `live`:
   // once git stops walking there is no session to show, and offering one would
   // mean reconstructing a merge git has finished with.
+  notifications: ({ lan }) => lan.toggleBell(),
   'merge-conflicts': ({ conflicts }) => {
     if (conflicts?.live) conflicts.show()
   },

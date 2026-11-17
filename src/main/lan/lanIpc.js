@@ -6,7 +6,8 @@ import { promisify } from 'util'
 import { createLan } from './lan'
 import { readComputerName } from './computerName'
 import { readLanSettings, writeLanSettings } from './lanStore'
-import { normalizeLanSettings, setPopups } from './lanSettings'
+import { SILENCE_CHOICES, normalizeLanSettings, setPopups, silence } from './lanSettings'
+import { refreshTrustedFps, registerItemsIpc, setUpItems } from './itemsIpc'
 import { getIdentity } from '../share'
 import { cancelPairing, registerPairingIpc, setUpPairing } from './pairingIpc'
 import { readTrusted } from '../trustedKeys'
@@ -37,6 +38,7 @@ export async function lanSnapshot() {
 }
 
 export async function broadcastLan() {
+  await refreshTrustedFps()
   const snapshot = await lanSnapshot()
   for (const w of BrowserWindow.getAllWindows()) w.webContents.send('lan:changed', snapshot)
 }
@@ -56,6 +58,7 @@ export async function startLanSharing() {
     onChange: () => broadcastLan().catch(() => {})
   })
   setUpPairing({ lan, identity, onTrustChanged: () => broadcastLan().catch(() => {}) })
+  setUpItems(lan)
   await lan.start()
 }
 
@@ -74,6 +77,10 @@ export async function updateLanSettings(patch) {
   const current = lan?.settings() ?? settings
   let next = normalizeLanSettings({ ...current, ...cleanPatch(patch) }, computerName)
   if (typeof patch?.popups === 'boolean') next = setPopups(next, patch.popups)
+  return saveSettings(next)
+}
+
+async function saveSettings(next) {
   settings = next
   if (!next.enabled) cancelPairing()
   writeLanSettings(settingsFile(), next)
@@ -81,9 +88,16 @@ export async function updateLanSettings(patch) {
   return lanSnapshot()
 }
 
+export function silenceLan(choice) {
+  if (!SILENCE_CHOICES.includes(choice)) return lanSnapshot()
+  return saveSettings(silence(lan?.settings() ?? settings, choice, Date.now()))
+}
+
 export function registerLanIpc({ log }) {
   ipcMain.handle('lan:state', () => lanSnapshot())
   ipcMain.handle('lan:update', (_e, patch) => updateLanSettings(patch))
+  ipcMain.handle('lan:silence', (_e, choice) => silenceLan(choice))
+  registerItemsIpc()
   registerPairingIpc({ nameOf: (fp) => lan?.peers().find((p) => p.fp === fp)?.name ?? fp })
   startLanSharing().catch((err) => log(err.message))
 }

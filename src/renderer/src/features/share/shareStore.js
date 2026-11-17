@@ -12,6 +12,7 @@ import { errorMessage } from '../../utils/shareErrors'
 import { t } from '../../i18n'
 import { keyExchangeActions } from './keyExchangeActions'
 import { keysActions } from './keysActions'
+import { lanSendActions } from './lanSendActions'
 
 export const useShareStore = defineStore('share', {
   state: () => ({
@@ -27,11 +28,15 @@ export const useShareStore = defineStore('share', {
     showTrustedKeysDialog: false,
     trusted: [],
     showShareKeyDialog: false,
-    showRotateKeyDialog: false
+    showRotateKeyDialog: false,
+    shareSnippet: null,
+    sending: false,
+    sendFailure: null
   }),
   actions: {
     ...keyExchangeActions,
     ...keysActions,
+    ...lanSendActions,
     // Save first (a share file needs a name + expiry), then the recipient picker.
     shareCurrent() {
       const diff = useDiffStore()
@@ -59,6 +64,7 @@ export const useShareStore = defineStore('share', {
     dismissShare() {
       this.shareEntryId = null
       this.shareDraft = null
+      this.shareSnippet = null
     },
     // Direction is share → email and never back. Fingerprints go over IPC; main
     // resolves the real addresses from the trust store, so `picked` is display-only.

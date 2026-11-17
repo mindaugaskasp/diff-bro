@@ -20,6 +20,7 @@ import { useCommands } from '../composables/useCommands'
 import AppIcon from './AppIcon.vue'
 import ToolbarOverflow from './ToolbarOverflow.vue'
 import ViewOptionsMenu from './ViewOptionsMenu.vue'
+import { NotificationBell } from '../features/lan'
 
 const store = useDiffStore()
 const ui = useUiStore()
@@ -95,6 +96,7 @@ const actionState = computed(() => ({
       <span class="divider" />
       <div id="toolbar-doc-actions" class="group doc-actions" />
       <ToolbarOverflow v-if="!onSnippet" :state="actionState" />
+      <NotificationBell />
       <button
         v-if="isMac"
         class="btn btn-sm btn-square"
