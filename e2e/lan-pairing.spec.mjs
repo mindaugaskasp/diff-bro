@@ -9,24 +9,28 @@ import {
 } from './fixtures.mjs'
 
 // Ben adds Ana: Ana's screen shows the pairing code, Ben types or pastes it.
-async function startPeer(name) {
+// Unique per run: parallel workers share the network, and each starts its own Ana and Ben.
+const RUN = Math.random().toString(36).slice(2, 7)
+
+async function startPeer(base) {
+  const name = `${base} ${RUN}${Math.random().toString(36).slice(2, 4)}`
   const dir = freshUserDataDir()
   const app = await launchApp(dir)
   const page = await firstReadyPage(app)
   await page.evaluate((n) => window.api.lanUpdate({ name: n }), name)
-  return { dir, app, page }
+  return { dir, app, page, name }
 }
 
 async function benAddsAna() {
   const ana = await startPeer('Ana')
   const ben = await startPeer('Ben')
   const settings = await openSettingsPage(ben.page, 'Network')
-  const anaRow = settings.locator('.person', { hasText: 'Ana' })
+  const anaRow = settings.locator('.person', { hasText: ana.name })
   await expect(anaRow).toBeVisible({ timeout: 20_000 })
   await anaRow.getByRole('button', { name: 'Add' }).click()
-  const shown = ana.page.getByRole('dialog', { name: 'Ben wants to add you' })
+  const shown = ana.page.getByRole('dialog', { name: `${ben.name} wants to add you` })
   await expect(shown).toBeVisible()
-  const adding = ben.page.getByRole('dialog', { name: 'Add Ana' })
+  const adding = ben.page.getByRole('dialog', { name: `Add ${ana.name}` })
   await expect(adding).toBeVisible()
   return { ana, ben, settings, anaRow, shown, adding }
 }
@@ -49,7 +53,7 @@ test('the code copied on one screen and pasted on the other adds the key', async
     await adding.getByRole('button', { name: 'Add', exact: true }).click()
     await expect(adding).toBeHidden()
     await expect(anaRow.getByText('Trusted')).toBeVisible()
-    const back = ana.page.getByRole('dialog', { name: 'Ben added you' })
+    const back = ana.page.getByRole('dialog', { name: `${ben.name} added you` })
     await expect(back).toBeVisible()
     await expect(back.getByRole('button', { name: 'Add back' })).toBeVisible()
   } finally {
