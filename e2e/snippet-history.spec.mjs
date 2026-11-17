@@ -41,7 +41,13 @@ async function editSnippet(page, name, body) {
   await focusEditor(view)
   await page.keyboard.press('ControlOrMeta+a')
   await page.keyboard.type(body)
-  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
+  // The 5 s autosave can land first and leave Save disabled; Escape then returns to viewing.
+  const save = docActions(page).getByRole('button', { name: 'Save', exact: true })
+  const saved = await save.click({ timeout: 2000 }).then(
+    () => true,
+    () => false
+  )
+  if (!saved) await page.keyboard.press('Escape')
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
 }
 
