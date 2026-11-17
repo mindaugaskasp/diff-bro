@@ -44,3 +44,25 @@ test('the Network page shows the name and the switches', async () => {
     await stop(solo)
   }
 })
+
+test('a key reset while sharing is announced under the new key, without a restart', async () => {
+  const ana = await startPeer('Ana')
+  const ben = await startPeer('Ben')
+  try {
+    const seesAna = (fp) =>
+      expect
+        .poll(
+          async () => (await ben.page.evaluate(() => window.api.lanState())).peers.map((p) => p.fp),
+          {
+            timeout: 20_000
+          }
+        )
+        .toContain(fp)
+    const before = (await ana.page.evaluate(() => window.api.lanState())).peers
+    expect(before).toBeDefined()
+    const { fingerprint } = await ana.page.evaluate(() => window.api.rotateKey())
+    await seesAna(fingerprint)
+  } finally {
+    await stop(ana, ben)
+  }
+})

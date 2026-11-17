@@ -22,6 +22,7 @@ import { mayReadPath } from './files'
 import { openConfig, sealConfig } from './configBackup'
 import { checkDestination, writeBackupZip } from './backupZip'
 import { IdentityUnavailable, guardIdentity, validateRestoredConfig } from './shareCore'
+import { identityPersisted } from './identityEvents'
 import { importedKeyName, keyNameProblem, keyReadError, normalizeKeyName } from '../shared/keyName'
 import { validateSnippetBundle } from './snippetSealing'
 import {
@@ -175,6 +176,7 @@ async function persistIdentity(priv, pub) {
     : Buffer.from(PLAIN_PREFIX + privJson)
   await writeFile(privPath(), out, { mode: 0o600 })
   await writeFile(pubPath(), JSON.stringify(pub, null, 2))
+  identityPersisted()
 }
 
 // Every export of this key carries a valid name: the given one, or the one
@@ -267,8 +269,7 @@ export async function vouchedBy(key) {
 export function registerShareIpc() {
   registerTrustedKeyIpc()
 
-  // Creates the keypairs on first use (no manual "generate keys" step); null if
-  // the identity can't be loaded.
+  // Creates the keypairs on first use, no "generate keys" step; null if unloadable.
   // Rotation is deliberate and irreversible in one direction: the old key is
   // retired (decrypt-only), never deleted, so unopened diffs addressed to it
   // still open.
@@ -327,8 +328,7 @@ export function registerShareIpc() {
     }
   })
 
-  // Save this install's public key for handoff; `label` is the embedded cosmetic
-  // display name.
+  // Save this install's public key for handoff; `label` is its cosmetic display name.
   ipcMain.handle(
     'share:exportPublicKey',
     guardIdentity(async (e, label) => {

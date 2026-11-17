@@ -3,8 +3,7 @@ import { createPairing } from './pairing'
 import { normalizeCode } from './pairingCode'
 import { createRateLimit } from './rateLimit'
 import { connectTo } from './server'
-import { parseKeyText } from '../keyText'
-import { encodePublicKey } from '../sealing'
+import { pairingKeyText, parsePairingKey } from '../keyText'
 import { checkedTrustedName, storeTrusted } from '../trustedKeys'
 import { appendLog } from '../logger'
 
@@ -28,14 +27,14 @@ export function setUpPairing({ lan, identity, onTrustChanged }) {
     log: (message) => appendLog({ source: 'lan', level: 'info', message }),
     identity: {
       fp: identity.pub.fingerprint,
-      keyText: encodePublicKey(identity.pub),
+      keyText: pairingKeyText(identity.pub),
       name: () => settings().name
     },
     connect: (fp, handlers) => {
       const endpoint = lan.endpointOf(fp)
       return endpoint ? connectTo(endpoint, handlers) : Promise.reject(new Error('gone'))
     },
-    parseKey: parseKeyText,
+    parseKey: parsePairingKey,
     storeKey: async (key, fp, name) => {
       await storeTrusted(key, fp, await labelFor(fp, name))
       onTrustChanged()
