@@ -31,6 +31,11 @@ test('the Network page shows the name and the switches', async () => {
   try {
     const settings = await openSettingsPage(solo.page, 'Network')
     await expect(settings.getByTestId('lan-name')).toHaveValue(solo.name)
+    const field = await settings.getByTestId('lan-name').boundingBox()
+    const label = await settings.getByText('Name others see', { exact: true }).boundingBox()
+    expect(Math.abs(label.y + label.height / 2 - (field.y + field.height / 2))).toBeLessThan(2)
+    expect(field.x).toBeGreaterThan(label.x + label.width)
+    expect(field.width).toBeGreaterThan(300)
     await expect(settings.getByRole('checkbox', { name: 'Share on this network' })).toBeChecked()
     await settings.getByRole('checkbox', { name: 'Share on this network' }).uncheck()
     await expect(settings.getByRole('checkbox', { name: 'Show me to others' })).toBeDisabled()

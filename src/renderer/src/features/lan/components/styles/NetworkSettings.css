@@ -15,6 +15,7 @@ h4:not(:first-child) {
 }
 .name-row {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: var(--space-3);
   margin-top: var(--space-1);
@@ -24,6 +25,7 @@ h4:not(:first-child) {
 }
 .name-label {
   flex: none;
+  color: var(--text);
   width: 140px;
 }
 .name-row input {
