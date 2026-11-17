@@ -376,10 +376,10 @@ one tag.
 
 **Slice 8: docs**
 
-- [ ] 34. README lines 12 and 62 + feature row.
-- [ ] 35. `docs/features.md`, `docs/architecture.md`, `docs/glossary.md`.
-- [ ] 36. `docs/roadmap.md` + `docs/brand/roadmap.svg`.
-- [ ] 37. `scripts/theme-sweep.mjs` `SURFACES` probes; `make theme-sweep` green on 20.
+- [x] 34. README lines 12 and 62 + feature row.
+- [x] 35. `docs/features.md`, `docs/architecture.md`, `docs/glossary.md`.
+- [x] 36. `docs/roadmap.md` + `docs/brand/roadmap.svg`.
+- [x] 37. `scripts/theme-sweep.mjs` `SURFACES` probes; `make theme-sweep` green on 20.
 
 **Close**
 
@@ -454,6 +454,8 @@ one tag.
 | 2026-11-17 | `removeTrusted(fp)` was extracted from the `share:removeTrusted` handler and is shared by Stop sharing                                                                                                                      | one removal path                                                                                                                                                                                                                                     | a second copy                                                            |
 | 2026-11-17 | the multi-instance LAN specs run with a 90-second timeout                                                                                                                                                                   | two launches and pairing both ways exceeded 30 s under the full parallel run                                                                                                                                                                         | —                                                                        |
 | 2026-11-17 | the file and email sharing specs turn sharing on the network off (`withoutLan`, `turnLanOff`)                                                                                                                               | with it on, offline people are disabled in the Share dialog, by decision; they passed in one run only by a race with the LAN state loading                                                                                                           | —                                                                        |
+| 2026-11-17 | the theme sweep probes the two LAN surfaces a single instance reaches: the Network page and the bell's empty list (popups off)                                                                                              | the code dialog, item dialog and cards need two instances; they were measured on all 20 themes at design time and in light and dark in e2e                                                                                                           | a two-instance sweep                                                     |
+| 2026-11-17 | bug, pre-existing: the theme sweep closed Settings with Escape, which #235 stopped doing, so every sweep run failed at its first theme change                                                                               | red: `SWEEP_ONLY=menu-strip` failed in `setTheme`; green after closing Settings with its Close button (`closeSettingsDialog`)                                                                                                                        | —                                                                        |
 
 ## Validation
 

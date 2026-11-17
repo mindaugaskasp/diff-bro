@@ -50,9 +50,14 @@ flowchart TB
 - **Adapters decouple formats from viewers.** Everything is normalized into a
   comparable (`{ kind, … }`); new formats plug into the registry without
   touching `DiffViewer`.
-- **The network kill-switch guarantees offline operation** — every request that
+- **The network kill-switch keeps the app off the internet** — every request that
   isn't `file://` / `devtools://` / `blob:` / `data:` (or the Vite dev server in
   dev mode) is cancelled at the session level.
+- **The one exception is fenced in `src/main/lan/`.** Sharing on the local
+  network opens an mDNS socket and one TCP listener there and nowhere else
+  (`net` and `dgram` are lint-banned outside it, HTTP and TLS everywhere), bound
+  to private interface addresses only. What travels is a public key or the
+  same sealed envelope a `.diffbro` file carries.
 - **The quick look-up is a second, equally-hardened window.** A global shortcut
   summons a frameless floating launcher (its own renderer entry) to search
   snippets and saved diffs without raising the main window. It re-declares every
@@ -74,7 +79,15 @@ flowchart TB
   comparison follows the same split: `lineIndexCore.js` (chunked line scanning +
   digests), `lineIndex.js` (the index and its windowed reads), `hashDiff.js`
   (alignment over digests) and `streamWindow.js` (range policy) are pure and
-  unit-tested; `streamedDiff.js` is the IPC glue.
+  unit-tested; `streamedDiff.js` is the IPC glue. `lan/` is sharing on the local
+  network:
+  - the pure, unit-tested cores: `pairingCode.js` (commit-then-reveal pairing
+    code), `frames.js` (size-capped frames), `dnsSd.js` (DNS-SD for one
+    service), `privateAddress.js`, `peers.js`, `pairing.js` (both sides of
+    adding someone), `lanInbox.js`, `lanItems.js`, `revoke.js` (the signed
+    stopped-sharing notice);
+  - the sockets: `discovery.js` and `server.js`;
+  - the IPC glue: `lanIpc.js`, `pairingIpc.js`, `itemsIpc.js`, `revokeIpc.js`.
 - `src/preload` — the `contextBridge` `window.api`.
 - `src/renderer` — the Vue app. `stores/` is the CORE (the live comparison, the
   vault, snippets, settings, tabs, and `uiStore` for dialog chrome);
@@ -86,8 +99,9 @@ flowchart TB
   A slice may read the core; **the core may not import a slice** — see the four
   rules in [standards.md](standards.md#how-a-feature-is-put-together), which
   `scripts/check-structure.mjs` and the ESLint layering rules enforce. The
-  slices are `share`, `email`, `imageExport`, `configBackup`, `pasteToCompare`
-  and `onboarding` (the first-run tour: its overlay measures a `data-tour`
+  slices are `share`, `email`, `imageExport`, `configBackup`, `pasteToCompare`,
+  `lan` (sharing on the local network: the Network page, pairing, the item
+  dialog, the bell) and `onboarding` (the first-run tour: its overlay measures a `data-tour`
   target at run time, and its step commands dispatch from
   `composables/useTourCommands.js` — reaching the registry from inside the slice
   would close a cycle back through its own `index.js`).

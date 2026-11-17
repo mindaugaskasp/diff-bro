@@ -1,7 +1,7 @@
 # Roadmap
 
 <img src="brand/roadmap.svg" width="100%"
-     alt="Roadmap board — nine tracks. Claude connection, shipped: read the library over stdio, proposals wait in Snippets and Diffs. Developer workflow, shipped: dependencies as lockfiles, compare a git revision, a three-way merge view. Spreadsheet · finance: amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs — a decision first. Signing: macOS Developer ID, Windows deferred. Onboarding, shipped: tours you do, a release offers its own tour, one tip a day.">
+     alt="Roadmap board — ten tracks. Claude connection, shipped: read the library over stdio, proposals wait in Snippets and Diffs. Developer workflow, shipped: dependencies as lockfiles, compare a git revision, a three-way merge view. Spreadsheet · finance: amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs — a decision first. Signing: macOS Developer ID, Windows deferred. Onboarding, shipped: tours you do, a release offers its own tour, one tip a day. Local network sharing, shipped: add someone with a pairing code, send diffs and snippets sealed, a bell, silencing, stop sharing.">
 
 <sup>Board is `docs/brand/roadmap.svg` — hand-authored, edit it alongside the
 sections below.</sup>
@@ -329,6 +329,30 @@ Every call is logged by tool and item name.
 - **Received diffs:** a separate, explicitly worded scope.
 - **Windows:** confirm the headless launch keeps its stdio pipes, done by hand
   on a Windows machine before the feature is advertised there.
+
+## Local network sharing
+
+**Done.** DiffBro instances on one network share keys, diffs and snippets
+directly: mDNS discovery and one TCP listener, fenced in `src/main/lan/`.
+
+```mermaid
+flowchart LR
+  find["mDNS<br>_diffbro._tcp"] --> add["Add: pairing code<br>commit-then-reveal"]
+  add --> trust["trusted-keys.json"]
+  trust --> send["Send now<br>sealed envelope"]
+  send --> offer["dialog · bell<br>Silence for ▾"]
+  offer --> tab["opens in a tab"]
+  trust --> stop["Stop sharing<br>signed notice"]
+```
+
+- Done. Add someone with a one-time pairing code (copy, paste, countdown, one try).
+- Done. Send diffs and snippets, sealed as a `.diffbro`; people not on the
+  network are disabled in the Share dialog.
+- Done. Receive in a dialog queued "1 of N"; Silence for 1 min to Forever; a bell
+  beside the gear.
+- Done. Stop sharing removes the key, deletes what waits, tells them (signed).
+- Open. IPv6-only networks (discovery is IPv4 today).
+- Open. Escape with a menu open inside a dialog closes the dialog too.
 
 ## Snippets
 

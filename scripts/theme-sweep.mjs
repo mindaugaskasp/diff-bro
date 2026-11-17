@@ -23,7 +23,7 @@ import { createRequire } from 'node:module'
 import { _electron as electron } from '@playwright/test'
 import { THEMES as ALL_THEMES } from '../src/renderer/src/utils/themes.js'
 
-/* global document, getComputedStyle -- inside page.evaluate only */
+/* global document, getComputedStyle, window -- inside page.evaluate only */
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const MAIN = join(ROOT, 'build', 'main', 'index.js')
@@ -151,14 +151,20 @@ async function closeSnippetTab(page) {
   await page.getByRole('region', { name: 'New snippet' }).waitFor({ state: 'detached' })
 }
 
+// Esc no longer closes Settings (#235); its Close button does.
+async function closeSettingsDialog(page) {
+  const dlg = page.getByRole('dialog', { name: 'Settings', exact: true })
+  await dlg.locator(':scope > .dialog-actions').getByRole('button', { name: 'Close' }).click()
+  await dlg.waitFor({ state: 'detached' })
+}
+
 async function setTheme(page, label) {
   await pickMenuItem(page, 'File', 'Settings…')
   const dlg = page.getByRole('dialog', { name: 'Settings', exact: true })
   await dlg.getByRole('button', { name: `Use the ${label} theme` }).click()
   const save = dlg.locator(':scope > .dialog-actions .btn-primary')
   if (await save.isEnabled()) await save.click()
-  await page.keyboard.press('Escape')
-  await dlg.waitFor({ state: 'hidden' })
+  await closeSettingsDialog(page)
 }
 
 // Leaves a structure diff on screen: its status band is the only one carrying
@@ -541,6 +547,7 @@ async function openSettingsPage(page, group, name) {
 }
 const openLanguagesPane = (page) => openSettingsPage(page, 'Integrations', 'Languages')
 const openClaudePane = (page) => openSettingsPage(page, 'Integrations', 'Claude')
+const openNetworkPane = (page) => openSettingsPage(page, 'Integrations', 'Network')
 
 async function enablePythonInSettings(page, app) {
   const python = execFileSync('/bin/sh', ['-c', 'command -v python3']).toString().trim()
@@ -628,6 +635,39 @@ async function seedClaudeInbox(page, userDataDir) {
 
 const SURFACES = [
   {
+    name: 'settings-network',
+    open: async (page) => {
+      await openNetworkPane(page)
+      await page.locator('.network-settings').waitFor()
+    },
+    close: async (page) => {
+      await closeSettingsDialog(page)
+    },
+    probes: {
+      'switch label': ['.network-settings .setting-toggle', TEXT],
+      'switch note': ['.network-settings .dialog-note', TEXT],
+      'name field': ['.network-settings .name-row input', TEXT]
+    }
+  },
+  {
+    name: 'lan-bell-empty',
+    open: async (page) => {
+      await page.evaluate(() => window.api.lanUpdate({ popups: false }))
+      await page.getByTestId('lan-bell').click()
+      await page.locator('.notifications').waitFor()
+    },
+    close: async (page) => {
+      await page.mouse.click(5, 300)
+      await page.locator('.notifications').waitFor({ state: 'detached' })
+      await page.evaluate(() => window.api.lanUpdate({ popups: true }))
+    },
+    probes: {
+      'list title': ['.notifications .title', TEXT],
+      'popups off': ['.notifications .meta', TEXT],
+      'nothing waiting': ['.notifications .empty', TEXT]
+    }
+  },
+  {
     name: 'save-diff-insecure',
     open: async (page) => {
       await page.getByRole('button', { name: 'Paste mode' }).click()
@@ -688,8 +728,7 @@ const SURFACES = [
       await page.locator('.lang-row.is-off').first().waitFor()
     },
     close: async (page) => {
-      await page.keyboard.press('Escape')
-      await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'detached' })
+      await closeSettingsDialog(page)
     },
     probes: {
       'language name': ['.lang-row .setting-toggle', TEXT],
@@ -709,8 +748,7 @@ const SURFACES = [
     close: async (page) => {
       await page.keyboard.press('Escape')
       await page.locator('.program-menu').waitFor({ state: 'detached' })
-      await page.keyboard.press('Escape')
-      await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'detached' })
+      await closeSettingsDialog(page)
     },
     probes: {
       'program path field, on': ['.lang-row:not(.is-off) .lang-path', TEXT],
@@ -825,8 +863,7 @@ const SURFACES = [
       await dlg.locator('.font-preview').scrollIntoViewIfNeeded()
     },
     close: async (page) => {
-      await page.keyboard.press('Escape')
-      await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'detached' })
+      await closeSettingsDialog(page)
     },
     probes: {
       hint: ['.settings-appearance .hint', TEXT],
@@ -1255,8 +1292,7 @@ const SURFACES = [
     },
     close: async (page) => {
       await page.getByRole('alertdialog').getByRole('button', { name: 'Cancel' }).click()
-      await page.keyboard.press('Escape')
-      await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'detached' })
+      await closeSettingsDialog(page)
     },
     probes: {
       intro: ['.claude-settings .dialog-note', TEXT],
@@ -1281,8 +1317,7 @@ const SURFACES = [
     },
     close: async (page) => {
       await page.getByLabel('Enable Claude MCP connection').uncheck()
-      await page.keyboard.press('Escape')
-      await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'detached' })
+      await closeSettingsDialog(page)
     },
     probes: {
       'app name': ['.app-row .app-name', TEXT],
@@ -1706,8 +1741,7 @@ const SURFACES = [
     name: 'tours-page',
     open: showToursPage,
     close: async (page) => {
-      await page.keyboard.press('Escape')
-      await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'detached' })
+      await closeSettingsDialog(page)
     },
     probes: {
       heading: ['.tours-settings h4', TEXT],
