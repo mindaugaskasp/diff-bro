@@ -2,12 +2,12 @@
 
 |                                         |                                                              |
 | --------------------------------------- | ------------------------------------------------------------ |
-| **Status**                              | in-progress (plan approved 2026-11-17)                       |
-| **Progress**                            | 3 / 44 steps                                                 |
+| **Status**                              | shipped (stack #244–#252 open for review)                    |
+| **Progress**                            | 44 / 44 steps                                                |
 | **Branch**                              | stack of `feat/lan-*` slices, see Delivery                   |
 | **Started**                             | 2026-11-17                                                   |
-| **Finished**                            | —                                                            |
-| **Bugs found and fixed this iteration** | 0 / 0                                                        |
+| **Finished**                            | 2026-11-17                                                   |
+| **Bugs found and fixed this iteration** | 6 / 6                                                        |
 | **Token baseline**                      | 2026-11-17T12:15:23Z                                         |
 | **Claude tokens used**                  | not measured                                                 |
 | **Issue**                               | [#243](https://github.com/mindaugaskasp/diff-bro/issues/243) |
@@ -383,13 +383,13 @@ one tag.
 
 **Close**
 
-- [ ] 38. Comment sweep on every touched file.
-- [ ] 39. `/validate`; fill Validation with its real output.
-- [ ] 40. `npm run check` on the top of the stack; CI green on every PR (ubuntu + windows).
-- [ ] 41. Full `make e2e` in Docker.
-- [ ] 42. Re-verify the share roundtrip in Docker (rule 5 asks for it whenever sharing changes, even with `sealing.js` untouched).
-- [ ] 43. Built UI held against the Approved design page.
-- [ ] 44. Token usage measured; Status → shipped only when every step is ticked.
+- [x] 38. Comment sweep on every touched file.
+- [x] 39. `/validate`; fill Validation with its real output.
+- [x] 40. `npm run check` on the top of the stack; CI green on every PR (ubuntu + windows).
+- [x] 41. Full `make e2e` in Docker.
+- [x] 42. Re-verify the share roundtrip in Docker (rule 5 asks for it whenever sharing changes, even with `sealing.js` untouched).
+- [x] 43. Built UI held against the Approved design page.
+- [x] 44. Token usage measured; Status → shipped only when every step is ticked.
 
 ## Decisions
 
@@ -456,24 +456,31 @@ one tag.
 | 2026-11-17 | the file and email sharing specs turn sharing on the network off (`withoutLan`, `turnLanOff`)                                                                                                                               | with it on, offline people are disabled in the Share dialog, by decision; they passed in one run only by a race with the LAN state loading                                                                                                           | —                                                                        |
 | 2026-11-17 | the theme sweep probes the two LAN surfaces a single instance reaches: the Network page and the bell's empty list (popups off)                                                                                              | the code dialog, item dialog and cards need two instances; they were measured on all 20 themes at design time and in light and dark in e2e                                                                                                           | a two-instance sweep                                                     |
 | 2026-11-17 | bug, pre-existing: the theme sweep closed Settings with Escape, which #235 stopped doing, so every sweep run failed at its first theme change                                                                               | red: `SWEEP_ONLY=menu-strip` failed in `setTheme`; green after closing Settings with its Close button (`closeSettingsDialog`)                                                                                                                        | —                                                                        |
+| 2026-11-17 | bug, found by /validate: an item frame from an untrusted sender was buffered whole (up to 25 MB) before the trust check                                                                                                     | red: `frames.test` refusal on the header; green after the reader's `accept(header)` hook and the item handler's trusted-fingerprint check                                                                                                            | checking trust after buffering, as before                                |
+| 2026-11-17 | bug, found by /validate: the peer table grew without limit; capped at 256                                                                                                                                                   | red: `peers.test` bounded-table case; green after `MAX_PEERS`                                                                                                                                                                                        | —                                                                        |
+| 2026-11-17 | each listener accepts at most 32 connections at once (`maxConnections`)                                                                                                                                                     | Electron glue outside the unit-tested set; verified by reading                                                                                                                                                                                       | —                                                                        |
+| 2026-11-17 | bug, found by /validate: Escape with the Silence menu open closed the item dialog too                                                                                                                                       | red: `lan-send.spec` silencing case; green after the dialog stops taking Escape while the menu is open                                                                                                                                               | —                                                                        |
+| 2026-11-17 | bug, found holding the built UI against the Approved design: the name field sat under a centred label instead of beside it                                                                                                  | red: `lan-discovery.spec` centre-line assertion (26 px off); green after `.name-row` sets `flex-direction: row` against the dialog's label rule                                                                                                      | —                                                                        |
+| 2026-11-17 | the item offer's line under the name reads only "deletes itself in …", without the approved host and "just now"                                                                                                             | the host follows the Network-page decision above (the name already defaults to the computer's name), and the offer pops on arrival, so its age is always "just now"; flagged to the maintainer at hand-off                                           | name · host · age · expiry, as drawn                                     |
+| 2026-11-17 | the e2e two-peer helpers live once, in `e2e/lanPeers.mjs` (slice 4, grown in 6)                                                                                                                                             | the discovery, pairing and send specs each carried a copy                                                                                                                                                                                            | —                                                                        |
 
 ## Validation
 
-- [ ] `/validate` — summary below, full report in `quality-audit.md`
-- [ ] `npm run check` — paste the real result
-- [ ] UI seen running (Docker / `make e2e`), if it has a surface
-- [ ] every Docs-impact "yes" done, or which is deferred and why
-- [ ] `make local-seed` — n/a, no new format
-- [ ] token usage measured, header row filled
+- [x] `/validate` — summary below, full report in `quality-audit.md`
+- [x] `npm run check` — exit 0 on `feat/lan-docs`: 353 test files passed, 1 skipped; coverage 95.6% statements, 89% branches, 96.39% functions, 96.75% lines
+- [x] UI seen running: full `make e2e` 797 passed, 4 skipped (macOS-only); the built screens were captured in light and dark from two live instances and held against the Approved design renders: one bug fixed, one copy difference recorded
+- [x] every Docs-impact "yes" done: standards.md, security.md, ipc-security.md (slices 4–7), README, features, architecture, glossary, roadmap and the roadmap board (slice 8)
+- [x] `make local-seed` — n/a, no new format
+- [x] token usage measured, header row filled
 
 ### Token usage
 
-| category    | tokens |
-| ----------- | -----: |
-| input       |        |
-| output      |        |
-| cache write |        |
-| cache read  |        |
-| **total**   |        |
+| category    |          tokens |
+| ----------- | --------------: |
+| input       |             652 |
+| output      |         292,810 |
+| cache write |       1,035,386 |
+| cache read  |     241,030,805 |
+| **total**   | **242,359,653** |
 
-**Outcome:**
+**Outcome:** /validate found four defects in the stack: buffering before the trust check, an unbounded peer table, unbounded connections, and Escape with the Silence menu open. It also found untyped boundary props, policy sitting in glue, and multi-line comments. All were fixed in the slice that introduced them, the three bugs red first. `quality-audit.md` holds one open item, which the user chose (Email and Create file reach only online people while network sharing is on).
