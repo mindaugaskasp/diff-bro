@@ -30,6 +30,7 @@ describe('settingsGroups', () => {
       'claude',
       'cli',
       'email',
+      'network',
       'storage',
       'limits',
       'logs'
@@ -43,7 +44,7 @@ describe('settingsGroups', () => {
 
   it('gives every group and page a catalogue key', () => {
     const groups = settingsGroups({ windows: true })
-    expect(groups.flatMap((g) => g.pages)).toHaveLength(12)
+    expect(groups.flatMap((g) => g.pages)).toHaveLength(13)
     for (const group of groups) {
       expect(group.labelKey).toBe(`settingsDialog.group.${group.id}`)
       for (const page of group.pages) expect(page.labelKey).toMatch(/^settingsDialog\.tab\./)

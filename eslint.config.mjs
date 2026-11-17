@@ -9,6 +9,17 @@ import { featureNames } from './scripts/lib/featureDirs.mjs'
 // The renderer/main fence (hard rule 3). Shared rather than repeated because
 // no-restricted-imports is REPLACED, not merged, by a later block — a config
 // that re-sets it for a subdirectory silently drops this ban for those files.
+const banned = (names, message) =>
+  names.flatMap((n) => [n, `node:${n}`]).map((name) => ({ name, message }))
+const SOCKET_MODULES = banned(
+  ['net', 'dgram'],
+  'Sockets live only in src/main/lan, which binds to private interfaces (hard rule 1).'
+)
+const WEB_MODULES = banned(
+  ['http', 'https', 'http2', 'tls'],
+  'DiffBro makes no web requests and runs no web server (hard rule 1).'
+)
+
 const NO_NODE_IN_RENDERER = {
   paths: [
     {
@@ -182,6 +193,17 @@ export default [
   {
     files: ['src/main/**', 'src/preload/**', 'electron.vite.config.mjs', 'scripts/**'],
     languageOptions: { globals: { ...globals.node } }
+  },
+
+  // Hard rule 1: the only sockets are the LAN ones, and they live in src/main/lan.
+  {
+    files: ['src/main/**', 'src/preload/**'],
+    ignores: ['src/main/lan/**'],
+    rules: { 'no-restricted-imports': ['error', { paths: [...SOCKET_MODULES, ...WEB_MODULES] }] }
+  },
+  {
+    files: ['src/main/lan/**'],
+    rules: { 'no-restricted-imports': ['error', { paths: WEB_MODULES }] }
   },
 
   // src/shared is bundled into BOTH processes, so it lives under the renderer's

@@ -12,6 +12,7 @@ import SettingsLimits from './SettingsLimits.vue'
 import StorageSettings from './StorageSettings.vue'
 import { EmailSettings } from '../features/email'
 import { ClaudeSettings } from '../features/claude'
+import { NetworkSettings } from '../features/lan'
 import { LanguagesSettings } from '../features/runner'
 import { ToursSettings, useOnboardingStore } from '../features/onboarding'
 import { useUiStore } from '../stores/uiStore'
@@ -66,6 +67,8 @@ const draft = useSettingsDraft({ close: () => (ui.showSettingsDialog = false) })
         <LanguagesSettings v-else-if="nav.page === 'languages'" />
 
         <ClaudeSettings v-else-if="nav.page === 'claude'" />
+
+        <NetworkSettings v-else-if="nav.page === 'network'" />
 
         <template v-else-if="nav.page === 'cli'">
           <CliSettings />

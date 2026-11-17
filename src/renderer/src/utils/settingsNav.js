@@ -18,7 +18,8 @@ const GROUPS = [
       { id: 'languages', labelKey: 'settingsDialog.tab.languages' },
       { id: 'claude', labelKey: 'settingsDialog.tab.claude' },
       { id: 'cli', labelKey: 'settingsDialog.tab.cli' },
-      { id: 'email', labelKey: 'settingsDialog.tab.email' }
+      { id: 'email', labelKey: 'settingsDialog.tab.email' },
+      { id: 'network', labelKey: 'settingsDialog.tab.network' }
     ]
   },
   {
