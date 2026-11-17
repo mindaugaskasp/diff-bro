@@ -1,5 +1,4 @@
-// macOS keeps the friendly name ("Jonas's MacBook Pro") only in ComputerName;
-// hostname() there is the dashed DNS label.
+// macOS keeps the friendly name only in ComputerName; hostname() is the DNS label.
 export async function readComputerName({ platform, env, hostname, run }) {
   if (platform === 'darwin') {
     try {

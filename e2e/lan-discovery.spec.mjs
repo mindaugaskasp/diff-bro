@@ -8,8 +8,7 @@ import {
   openSettingsPage
 } from './fixtures.mjs'
 
-// Two instances on one machine share its network, which is all discovery needs. Other
-// instances may be on the network too (the container's own app), so assertions name Ben.
+// Other instances may share the network (the container's own app), so assertions name the peer.
 const listeningServers = (app) =>
   app.evaluate(
     () =>
