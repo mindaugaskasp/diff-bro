@@ -1,8 +1,4 @@
-// DNS-SD over mDNS for one service type. Written here rather than taken from
-// multicast-dns / bonjour-service: announcing and browsing a single service is
-// a small subset, and an in-repo codec keeps the rule-2 surface at nothing.
-// Peers are reached at the packet's source address, so SRV targets and A/AAAA
-// records are not needed.
+// In-repo rather than multicast-dns / bonjour-service: one service is a small subset, and rule 2 stays at zero.
 export const SERVICE = '_diffbro._tcp.local'
 export const ANNOUNCE_TTL = 120
 

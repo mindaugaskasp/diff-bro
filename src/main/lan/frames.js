@@ -1,6 +1,4 @@
-// A frame is [u32 header length][header JSON][u32 body length][body]. Both
-// lengths are checked against the caps before a byte of what they announce is
-// buffered, so a peer cannot make main allocate on a promise.
+// Both lengths are checked against the caps before what they announce is buffered.
 export const FRAME_LIMITS = { header: 8 * 1024, item: 25 * 1024 * 1024 }
 
 const FP = /^[0-9a-f]{32}$/

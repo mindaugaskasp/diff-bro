@@ -1,6 +1,4 @@
-// Short authentication string for adding someone on the network. The adder
-// commits to its nonce before seeing the holder's, so a man in the middle gets
-// one guess per request instead of a search; see specs/2026-11-17-lan-sharing.
+// The adder commits before seeing the holder's nonce, so a man in the middle gets one guess.
 import { createHash, randomBytes, timingSafeEqual } from 'crypto'
 
 export const CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTVWXYZ'
