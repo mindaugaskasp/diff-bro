@@ -38,7 +38,11 @@ async function open(ctx) {
   ctx.discovery = await createDiscovery({
     addresses: ctx.addresses,
     announcement: () => announcement(ctx),
-    onPeer: (peer) => ctx.peers.saw(peer, ctx.now()) && ctx.onChange()
+    onPeer: (peer) => {
+      if (!ctx.peers.saw(peer, ctx.now())) return
+      ctx.peerHandlers.forEach((handle) => handle(peer.fp))
+      ctx.onChange()
+    }
   }).catch(() => null)
   ctx.discovery?.announce()
   ctx.discovery?.query()
@@ -115,6 +119,7 @@ export function createLan({ settings, selfFp, onChange, now = Date.now }) {
     handlers: new Map(),
     acceptors: new Map(),
     closeHandlers: [],
+    peerHandlers: [],
     addresses: [],
     server: null,
     discovery: null,
@@ -128,6 +133,7 @@ export function createLan({ settings, selfFp, onChange, now = Date.now }) {
     on: (type, handler) => ctx.handlers.set(type, handler),
     accept: (type, check) => ctx.acceptors.set(type, check),
     onClosed: (handler) => ctx.closeHandlers.push(handler),
+    onPeerSeen: (handler) => ctx.peerHandlers.push(handler),
     endpointOf: (fp) => ctx.peers.endpointOf(fp),
     peers: () => ctx.peers.list(),
     isOnline: () => ctx.addresses.length > 0,

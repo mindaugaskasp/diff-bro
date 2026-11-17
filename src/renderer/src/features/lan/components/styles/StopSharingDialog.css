@@ -1,0 +1,10 @@
+.body,
+.dialog-note {
+  margin: 0;
+}
+.dialog-note {
+  margin-top: var(--space-2);
+}
+.spacer {
+  flex: 1;
+}

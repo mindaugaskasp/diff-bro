@@ -22,7 +22,9 @@ export const useLanStore = defineStore('lan', {
     offerQueue: [],
     bellOpen: false,
     received: {},
-    requests: []
+    requests: [],
+    confirmStop: null,
+    revokedBy: null
   }),
   getters: {
     isActive: (s) => s.enabled && s.online,
@@ -44,6 +46,7 @@ export const useLanStore = defineStore('lan', {
         window.api.onLanPairing((view) => this.showPairing(view))
         window.api.onLanItemArrived((item) => this.itemArrived(item))
         window.api.onLanItemsChanged(() => this.loadItems())
+        window.api.onLanRevoked((who) => (this.revokedBy = who))
       }
       this.applySnapshot(await window.api.lanState())
       await this.loadItems()
@@ -144,6 +147,13 @@ export const useLanStore = defineStore('lan', {
       this.requests = withoutId(this.requests, request.id)
       this.bellOpen = false
       this.pairing = request
+    },
+    async stopSharing({ fp, name }) {
+      this.confirmStop = null
+      const res = await window.api.lanStopSharing(fp)
+      if (!res?.ok) return
+      await this.loadItems()
+      useDiffStore().showNotice(t('lan.stop.done', { name }))
     },
     declineRequest(request) {
       this.requests = withoutId(this.requests, request.id)

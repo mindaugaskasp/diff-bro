@@ -8,6 +8,7 @@ import { readComputerName } from './computerName'
 import { readLanSettings, writeLanSettings } from './lanStore'
 import { SILENCE_CHOICES, normalizeLanSettings, setPopups, silence } from './lanSettings'
 import { refreshTrustedFps, registerItemsIpc, setUpItems } from './itemsIpc'
+import { registerRevokeIpc, setUpRevoke } from './revokeIpc'
 import { getIdentity } from '../share'
 import { cancelPairing, registerPairingIpc, setUpPairing } from './pairingIpc'
 import { readTrusted } from '../trustedKeys'
@@ -59,6 +60,7 @@ export async function startLanSharing() {
   })
   setUpPairing({ lan, identity, onTrustChanged: () => broadcastLan().catch(() => {}) })
   setUpItems(lan)
+  setUpRevoke({ lan, identity, onTrustChanged: () => broadcastLan().catch(() => {}) })
   await lan.start()
 }
 
@@ -98,6 +100,7 @@ export function registerLanIpc({ log }) {
   ipcMain.handle('lan:update', (_e, patch) => updateLanSettings(patch))
   ipcMain.handle('lan:silence', (_e, choice) => silenceLan(choice))
   registerItemsIpc()
+  registerRevokeIpc()
   registerPairingIpc({ nameOf: (fp) => lan?.peers().find((p) => p.fp === fp)?.name ?? fp })
   startLanSharing().catch((err) => log(err.message))
 }
