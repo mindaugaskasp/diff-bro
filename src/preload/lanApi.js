@@ -23,5 +23,9 @@ export const lanApi = (ipcRenderer) => ({
   },
   onLanItemsChanged: (handler) => {
     ipcRenderer.on('lan:itemsChanged', () => handler())
+  },
+  lanStopSharing: (fp) => ipcRenderer.invoke('lan:stopSharing', String(fp)),
+  onLanRevoked: (handler) => {
+    ipcRenderer.on('lan:revoked', (_e, who) => handler(who))
   }
 })

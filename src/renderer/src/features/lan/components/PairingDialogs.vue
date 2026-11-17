@@ -4,6 +4,8 @@ import AddCodeDialog from './AddCodeDialog.vue'
 import ShowCodeDialog from './ShowCodeDialog.vue'
 import PairingResultDialog from './PairingResultDialog.vue'
 import ItemOfferDialog from './ItemOfferDialog.vue'
+import StopSharingDialog from './StopSharingDialog.vue'
+import RevokedDialog from './RevokedDialog.vue'
 import { useLanStore } from '../lanStore'
 
 const lan = useLanStore()
@@ -19,4 +21,6 @@ const isEntering = computed(() => ['connecting', 'enter-code'].includes(stage.va
     <PairingResultDialog v-else-if="stage !== 'added' && stage !== 'waiting'" />
   </template>
   <ItemOfferDialog v-else-if="lan.currentOffer" />
+  <StopSharingDialog v-if="lan.confirmStop" />
+  <RevokedDialog v-if="lan.revokedBy" />
 </template>

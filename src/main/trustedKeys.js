@@ -74,6 +74,14 @@ export async function addressesFor(fingerprints) {
   return { ok: true, to: found.map((t) => ({ label: t.label, email: t.email })) }
 }
 
+export async function removeTrusted(fp) {
+  const before = await readTrusted()
+  const trusted = before.filter((t) => t.fingerprint !== fp)
+  if (trusted.length === before.length) return { ok: false, error: 'unknown-recipient' }
+  await writeTrusted(trusted)
+  return { ok: true }
+}
+
 export function registerTrustedKeyIpc() {
   ipcMain.handle('share:listTrusted', async () =>
     (await readTrusted()).map(({ fingerprint, label, email }) => ({
@@ -108,11 +116,5 @@ export function registerTrustedKeyIpc() {
     return { ok: true, fingerprint: fp, email: next || null }
   })
 
-  ipcMain.handle('share:removeTrusted', async (e, fp) => {
-    const before = await readTrusted()
-    const trusted = before.filter((t) => t.fingerprint !== fp)
-    if (trusted.length === before.length) return { ok: false, error: 'unknown-recipient' }
-    await writeTrusted(trusted)
-    return { ok: true }
-  })
+  ipcMain.handle('share:removeTrusted', (e, fp) => removeTrusted(fp))
 }

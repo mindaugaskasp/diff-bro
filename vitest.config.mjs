@@ -61,6 +61,8 @@ export default defineConfig({
         'src/main/lan/pairing.js',
         'src/main/lan/lanItems.js',
         'src/main/lan/lanInbox.js',
+        'src/main/lan/revoke.js',
+        'src/main/lan/pendingNotices.js',
         'src/main/runnerCore.js',
         'src/main/runnerConfig.js',
         'src/main/runnerRuns.js',

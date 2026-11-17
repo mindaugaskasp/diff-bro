@@ -2101,6 +2101,17 @@
       "notOnNetwork": "Not on this network",
       "noNetwork": "Not connected to a network.",
       "dropped": "No one picked is on your network now."
+    },
+    "stop": {
+      "button": "Stop sharing",
+      "title": "Stop sharing with {name}?",
+      "body": "Removes their key. You won’t be able to open diffs or snippets they share, by file, email or on the network. | Removes their key. You won’t be able to open diffs or snippets they share, by file, email or on the network. Their waiting item is deleted. | Removes their key. You won’t be able to open diffs or snippets they share, by file, email or on the network. Their {n} waiting items are deleted.",
+      "told": "They’re told, and can add you again later with a new code.",
+      "confirm": "Stop sharing",
+      "done": "Stopped sharing with {name}. They’ve been told.",
+      "toldTitle": "{name} stopped sharing with you",
+      "toldBody": "You can’t send to them on the network any more. To share again, add them with a new code.",
+      "ok": "OK"
     }
   }
 }

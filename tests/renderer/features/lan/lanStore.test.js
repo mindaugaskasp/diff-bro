@@ -16,6 +16,7 @@ let changed
 let paired
 let arrived
 let items
+let revoked
 let useLanStore
 const showNotice = vi.fn()
 vi.mock('../../../../src/renderer/src/stores/diffStore', () => ({
@@ -49,6 +50,8 @@ beforeEach(async () => {
       from: 'Ana',
       entry: { kind: 'snippet', name: 'nginx reload', expiresAt: 9, snippet: { content: 'x' } }
     })),
+    onLanRevoked: vi.fn((handler) => (revoked = handler)),
+    lanStopSharing: vi.fn(async () => ({ ok: true, name: 'Ana' })),
     lanSilence: vi.fn(async (choice) =>
       snapshot(choice === 'forever' ? { popups: false } : { silencedUntil: Date.now() + 60_000 })
     )
@@ -280,5 +283,32 @@ describe('items and the bell', () => {
     paired(request)
     lan.declineRequest(request)
     expect(window.api.lanCancel).toHaveBeenCalledWith('r3')
+  })
+})
+
+describe('stop sharing', () => {
+  it('asks first, then tells main and says it is done', async () => {
+    const lan = useLanStore()
+    await lan.init()
+    lan.confirmStop = { fp: 'aa'.repeat(16), name: 'Ana' }
+    await lan.stopSharing(lan.confirmStop)
+    expect(window.api.lanStopSharing).toHaveBeenCalledWith('aa'.repeat(16))
+    expect(lan.confirmStop).toBeNull()
+    expect(showNotice).toHaveBeenCalled()
+  })
+
+  it('says nothing when main refuses', async () => {
+    window.api.lanStopSharing = vi.fn(async () => ({ error: 'unknown-recipient' }))
+    showNotice.mockClear()
+    const lan = useLanStore()
+    await lan.stopSharing({ fp: 'bb'.repeat(16), name: 'Bo' })
+    expect(showNotice).not.toHaveBeenCalled()
+  })
+
+  it('shows who stopped sharing with you', async () => {
+    const lan = useLanStore()
+    await lan.init()
+    revoked({ fp: 'aa'.repeat(16), name: 'Jonas' })
+    expect(lan.revokedBy).toEqual({ fp: 'aa'.repeat(16), name: 'Jonas' })
   })
 })
