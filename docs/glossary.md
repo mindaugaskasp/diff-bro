@@ -214,3 +214,21 @@ one run makes three failures visible that no unit test catches: a string that
 was never extracted (it stays plain ASCII), a container that cannot take a
 longer language (it clips), and a broken interpolation (`{name}` renders
 literally).
+
+## Sharing on the local network
+
+- **LAN** — _Local Area Network._ The office or home network your computer is on.
+  Diff Bro's network sharing stays inside it: sockets bind to private addresses
+  only, and announcements do not cross a router (`src/main/lan/`).
+- **mDNS** — _Multicast DNS._ How devices on one network announce themselves
+  without a server (UDP 5353 on `224.0.0.251`). Diff Bro announces
+  `_diffbro._tcp` with the name you chose, your key's fingerprint and a port.
+- **DNS-SD** — _DNS Service Discovery._ The record layout (PTR, SRV, TXT) mDNS
+  uses to say which services a device offers (`dnsSd.js`).
+- **Pairing code** — the one-time six-character code shown on the screen of the
+  person being added and typed by the person adding (`pairingCode.js`).
+- **Commit-then-reveal** — the adder sends a hash of a random value first and
+  reveals the value only after seeing the other side's, so the pairing code
+  cannot be steered: someone in the middle gets one guess per request.
+- **Stopped-sharing notice** — the message Stop sharing sends, signed with your
+  key so nobody else can forge it (`revoke.js`).

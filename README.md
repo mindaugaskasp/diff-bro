@@ -9,7 +9,7 @@
 <p align="center">
   <b>Stop pasting production configs into an online diff tool.</b><br>
   Compare two files, keep the ones worth keeping, and hand one to a teammate
-  sealed —<br>with no account, no telemetry and not one network request.
+  sealed —<br>with no account, no telemetry and nothing sent to the internet.
 </p>
 
 <p align="center">
@@ -45,21 +45,22 @@ app — see [packaging](docs/packaging.md).
 
 ## What it does
 
-|                      |                                                                                                                       |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **Compare**          | Two files or two pasted texts side by side, with every change highlighted.                                            |
-| **Understands data** | Spreadsheets, JSON, YAML, XML and diagrams compare by meaning, not just by line.                                      |
-| **Keep**             | Save comparisons and text snippets in a private, encrypted library.                                                   |
-| **Share safely**     | Send a sealed file only the people you chose can open, and it expires on its own.                                     |
-| **Tools**            | Format JSON, decode a token, convert a timestamp and more, without a website.                                         |
-| **Make it yours**    | A System theme that follows your OS, twenty more, nested tags, and a quick search that finds anything in a keystroke. |
-| **Learn by doing**   | Short tours you do yourself on sample files, and one tip a day about what no button says.                             |
+|                           |                                                                                                                            |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Compare**               | Two files or two pasted texts side by side, with every change highlighted.                                                 |
+| **Understands data**      | Spreadsheets, JSON, YAML, XML and diagrams compare by meaning, not just by line.                                           |
+| **Keep**                  | Save comparisons and text snippets in a private, encrypted library.                                                        |
+| **Share safely**          | Send a sealed file only the people you chose can open, and it expires on its own.                                          |
+| **Share on your network** | Add a colleague with a one-time pairing code, then send diffs and snippets straight to their Diff Bro on the same network. |
+| **Tools**                 | Format JSON, decode a token, convert a timestamp and more, without a website.                                              |
+| **Make it yours**         | A System theme that follows your OS, twenty more, nested tags, and a quick search that finds anything in a keystroke.      |
+| **Learn by doing**        | Short tours you do yourself on sample files, and one tip a day about what no button says.                                  |
 
 Everything in detail: [features](docs/features.md).
 
 ## Private by design
 
-- **Nothing leaves your computer.** The app makes no network requests on its own.
+- **Nothing goes to the internet.** The app makes no internet requests. Sharing on your local network is on by default and can be turned off in Settings ▸ Integrations ▸ Network.
 - **Encrypted at rest.** Saved work is locked with a key your operating system keeps.
 - **Shared only with who you pick.** Details in the [security model](docs/security.md).
 
