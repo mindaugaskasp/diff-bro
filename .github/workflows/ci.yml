@@ -68,9 +68,15 @@ jobs:
         run: npm run check
       # Every test and guard, without coverage instrumentation: coverage is a
       # measurement, not a test, and its floors are enforced on ubuntu above.
-      - name: The gate, minus coverage
+      - name: Guards and lint
         if: runner.os == 'Windows'
-        run: npm run check:static && npm test && npm run build
+        run: npm run check:static
+      - name: Unit tests, without coverage
+        if: runner.os == 'Windows'
+        run: npm test
+      - name: Build
+        if: runner.os == 'Windows'
+        run: npm run build
 
   # Packages the real exe and launches it, in parallel with check rather than after it.
   packaged:
