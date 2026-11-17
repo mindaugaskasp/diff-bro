@@ -16,6 +16,8 @@ import {
 
 const BASE_OPTIONS = {
   theme: MONACO_THEME,
+  // Monaco 0.55+ types through EditContext; paste, focus and the input tests need the textarea.
+  editContext: false,
   automaticLayout: true,
   minimap: { enabled: false },
   overviewRulerBorder: false,

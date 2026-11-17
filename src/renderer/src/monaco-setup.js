@@ -49,8 +49,8 @@ monaco.editor.addKeybindingRules?.([
 // consumes symbols: there is no outline, no breadcrumbs, and the palette that
 // would offer Go to Symbol is unbound above. setModeConfiguration REPLACES, so
 // the rest of the features have to be carried across.
-const htmlDefaults = monaco.languages.html?.htmlDefaults
-htmlDefaults?.setModeConfiguration({
+const { htmlDefaults } = monaco.html
+htmlDefaults.setModeConfiguration({
   ...htmlDefaults.modeConfiguration,
   documentSymbols: false
 })

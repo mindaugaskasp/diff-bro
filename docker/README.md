@@ -69,7 +69,7 @@ Node installed locally.
   reaches the container. `make e2e` is safe — `test:e2e` builds first — but
   running Playwright directly (`docker compose exec node npx playwright test …`)
   tests whatever the container built last. Rebuild inside it first:
-  `docker compose exec node npx electron-vite build`.
+  `docker compose exec node npm run build`.
 - The container runs Chromium with `--no-sandbox` (required as root in a
   container) and software rendering. That's fine for functional testing but
   is **not** representative for performance measurements.
