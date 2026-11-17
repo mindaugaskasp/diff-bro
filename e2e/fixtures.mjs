@@ -349,12 +349,7 @@ export { expect }
 // took until a CI runner to fire.
 export const newSnippetButton = (page) => page.locator('[data-tour="snippet-new"]')
 
-// Keys has no segment (#144): it is reached from Security ▸ Trusted Keys.
 export async function showPanel(page, panel) {
-  if (panel === 'keys') {
-    if (await page.locator('.usb-panel[data-panel="keys"]').isVisible()) return
-    return openMenu(page, 'Security', 'Trusted Keys', 'Manage Trusted Keys…')
-  }
   const show = page.getByRole('button', { name: 'Show the sidebar' })
   if (await show.count()) {
     await page.locator('.sidebar-strip').hover()

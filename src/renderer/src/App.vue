@@ -5,6 +5,7 @@ import { SnippetShot, useImageExportStore } from './features/imageExport'
 import { TourLayer } from './features/onboarding'
 import { usePasteToCompareStore } from './features/pasteToCompare'
 import { useCommands } from './composables/useCommands'
+import { useTabCycleKeys } from './composables/useTabCycleKeys'
 import { useSettingsStore } from './stores/settingsStore'
 import { useWindowFileDrop } from './composables/useFileDrop'
 import { useSnippetDiffSync } from './composables/useSnippetDiffSync'
@@ -54,6 +55,7 @@ const settings = useSettingsStore()
 // One side loaded: which one is still wanted.
 const missingSide = computed(() => (store.left ? 'right' : 'left'))
 const { runFromMenu, runCli } = useCommands()
+useTabCycleKeys(runFromMenu)
 
 settings.initTheme()
 window.api.onMenuAction((action) => runFromMenu(action))

@@ -260,8 +260,8 @@ sees the fingerprints (not the names) it was sealed for.
 **Filename integrity.** The on-disk name is a hash of the (authenticated)
 ciphertext, so it leaks nothing about the diff and a **renamed file is refused**
 on import. **Trusted keys must be named**: importing or dropping a `.diffbrokey`
-prompts for a label, and adding your own key is rejected. Manage names via
-**Security → Manage Trusted Keys**.
+prompts for a label, and adding your own key is rejected. Manage names in the
+**Keys** segment at the top of the sidebar.
 
 **No replay protection (by design).** Within its TTL a `.diffbro` file can be
 imported repeatedly, and a re-delivered old share is indistinguishable from a

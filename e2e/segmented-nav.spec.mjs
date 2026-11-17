@@ -1,14 +1,14 @@
-import { test, expect, openMenu } from './fixtures.mjs'
+import { test, expect } from './fixtures.mjs'
 
 const nav = (page) => page.locator('.sidebar-nav')
 const segment = (page, panel) => nav(page).locator(`[data-value="${panel}"]`)
 const aside = (page) => page.locator('aside.saved')
 
-test('four places, in a fixed order, at the top of the sidebar; no rail', async ({ page }) => {
+test('five places, in a fixed order, at the top of the sidebar; no rail', async ({ page }) => {
   const order = await nav(page)
     .locator('[data-value]')
     .evaluateAll((els) => els.map((el) => el.dataset.value))
-  expect(order).toEqual(['home', 'diffs', 'snippets', 'tools'])
+  expect(order).toEqual(['home', 'diffs', 'snippets', 'tools', 'keys'])
   await expect(page.locator('.rail')).toHaveCount(0)
 
   for (const panel of order) {
@@ -34,9 +34,14 @@ test('arrow keys move between the segments', async ({ page }) => {
   await expect(segment(page, 'snippets')).toHaveAttribute('aria-pressed', 'true')
 })
 
-test('Keys opens from the Security menu', async ({ page }) => {
-  await openMenu(page, 'Security', 'Trusted Keys', 'Manage Trusted Keys…')
+test('Trusted keys is a segment, and no longer a menu item', async ({ page }) => {
+  await segment(page, 'keys').click()
   await expect(page.locator('.usb-panel[data-panel="keys"]')).toBeVisible()
+  await page.locator('.menubar').getByRole('button', { name: 'Security', exact: true }).click()
+  const menu = page.locator('.menubar .menu > .dropdown')
+  await menu.locator(':scope > .submenu > .item', { hasText: 'Trusted Keys' }).hover()
+  await expect(menu.locator('.flyout .item', { hasText: 'Add Trusted Key' })).toBeVisible()
+  await expect(menu.locator('.flyout .item', { hasText: 'Manage Trusted Keys' })).toHaveCount(0)
 })
 
 test('the edge handle hides the sidebar, and the left strip brings it back', async ({ page }) => {

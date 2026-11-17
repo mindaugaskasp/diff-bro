@@ -70,7 +70,9 @@ describe('the shortcuts dialog against the menus that bind the keys', () => {
   const NOT_IN_MENUS = new Set([
     'shortcuts.quickLookAppWide',
     'shortcuts.findInDiff',
-    'shortcuts.pasteToCompare'
+    'shortcuts.pasteToCompare',
+    'shortcuts.nextComparison',
+    'shortcuts.prevComparison'
   ])
 
   const menuKeys = () => {

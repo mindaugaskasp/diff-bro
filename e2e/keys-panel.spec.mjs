@@ -10,9 +10,9 @@ import {
   showPanel
 } from './fixtures.mjs'
 
-test('the toolbar carries no key buttons, and Keys is not a sidebar segment', async ({ page }) => {
+test('the toolbar carries no key buttons; Keys is a sidebar segment (#263)', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'My key' })).toHaveCount(0)
-  await expect(page.locator('.sidebar-nav [data-value="keys"]')).toHaveCount(0)
+  await expect(page.locator('.sidebar-nav [data-value="keys"]')).toHaveCount(1)
 })
 
 test('before any swap, the panel shows your key and how sharing starts', async ({ page }) => {

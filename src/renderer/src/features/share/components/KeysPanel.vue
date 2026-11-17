@@ -15,7 +15,9 @@ function sendKey(run) {
   if (!keyNameProblem(label.value)) run(label.value)
   else share.showShareKeyDialog = true
 }
+// The panel loads its own list: it opens from the nav segment as well as from Add.
 onMounted(async () => {
+  share.refreshTrusted()
   fingerprint.value = (await window.api.myFingerprint?.()) ?? ''
   label.value = (await window.api.myKeyLabel?.()) ?? ''
 })
