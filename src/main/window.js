@@ -4,6 +4,7 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 import { DEV_URL } from './env'
 import appIcon from '../../resources/icon.png?asset'
+import { createStateSaver } from './windowStateSaver'
 
 // --- Window state persistence (size/position across launches) ---
 
@@ -27,20 +28,14 @@ function loadWindowState() {
 }
 
 function trackWindowState(win) {
-  let timer = null
-  const save = () => {
-    const bounds = win.getNormalBounds()
-    writeFile(windowStatePath(), JSON.stringify({ ...bounds, maximized: win.isMaximized() })).catch(
-      () => {}
-    )
-  }
-  const debounced = () => {
-    clearTimeout(timer)
-    timer = setTimeout(save, 500)
-  }
-  win.on('resize', debounced)
-  win.on('move', debounced)
-  win.on('close', save)
+  const saver = createStateSaver({
+    snapshot: () => ({ ...win.getNormalBounds(), maximized: win.isMaximized() }),
+    write: (state) => writeFile(windowStatePath(), JSON.stringify(state)).catch(() => {}),
+    isGone: () => win.isDestroyed()
+  })
+  win.on('resize', saver.soon)
+  win.on('move', saver.soon)
+  win.on('close', saver.now)
 }
 
 // The TOOLBAR sets the width floor, not the panes — below it the whole document

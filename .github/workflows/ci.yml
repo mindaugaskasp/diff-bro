@@ -22,9 +22,7 @@ jobs:
           cache: npm
       - run: npm install -g npm@11 --no-fund --no-audit
       - run: npm ci --no-fund
-      - run: npm run lint
-      - run: npm run check:styles && npm run check:themes && npm run check:structure
-      - run: npm run check:i18n && npm run check:rawtext
+      - run: npm run check:static
       - run: npm test
 
   # Both platforms the app ships on. Windows is here because the release build
@@ -65,12 +63,36 @@ jobs:
       - name: Guard against unexpected install warnings
         shell: bash
         run: node scripts/check-install-warnings.mjs npm-ci.log
-      - run: npm run check # ESLint + Vitest
-      - run: npm run build # ensure it bundles
+      - name: The whole gate
+        if: runner.os != 'Windows'
+        run: npm run check
+      # Every test and guard, without coverage instrumentation: coverage is a
+      # measurement, not a test, and its floors are enforced on ubuntu above.
+      - name: Guards and lint
+        if: runner.os == 'Windows'
+        run: npm run check:static
+      - name: Unit tests, without coverage
+        if: runner.os == 'Windows'
+        run: npm test
+      - name: Build
+        if: runner.os == 'Windows'
+        run: npm run build
+
+  # Packages the real exe and launches it, in parallel with check rather than after it.
+  packaged:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install -g npm@11 --no-fund --no-audit
+      - run: npm ci --no-fund
+      - run: npm run build
       # Claude Desktop launches `Diff Bro.exe mcp` with piped stdio; whether a
       # GUI-subsystem exe keeps those pipes can only be proven on Windows.
       - name: Claude connection answers over stdio (packaged exe)
-        if: runner.os == 'Windows'
         shell: bash
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
@@ -80,7 +102,6 @@ jobs:
       # The GUI launch of the same package: e2e runs build/ from the repo, so a file
       # the package leaves out or a Windows-only startup step is invisible to it.
       - name: Packaged app starts clean
-        if: runner.os == 'Windows'
         run: node scripts/packaged-smoke.mjs dist
 
   # One bundle for every shard: building in each shard was most of its fixed cost.
@@ -153,7 +174,7 @@ jobs:
       # which starts a single display and owns DISPLAY itself.
       - name: Start a virtual display per worker
         run: bash scripts/e2e-displays.sh
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v8
         with:
           name: e2e-build
           path: build/

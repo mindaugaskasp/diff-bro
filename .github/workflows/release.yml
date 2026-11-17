@@ -173,7 +173,7 @@ jobs:
       # and nsis) on every single run. Keyed on the lockfile, so an Electron bump
       # misses and refetches rather than packaging a stale runtime.
       - name: Cache the Electron + electron-builder downloads
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ github.workspace }}/.cache
           key: ${{ runner.os }}-ebuilder-${{ hashFiles('package-lock.json') }}
@@ -264,7 +264,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Mint a token for the version-sync App
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         id: app-token
         with:
           app-id: '4412629'

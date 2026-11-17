@@ -72,6 +72,7 @@ export default defineConfig({
         'src/main/sealingTtl.js',
         'src/main/launchGuard.js',
         'src/main/startSteps.js',
+        'src/main/windowStateSaver.js',
         'src/main/lan/acks.js',
         'src/main/lan/itemReceiver.js',
         'src/main/lan/peerName.js',
