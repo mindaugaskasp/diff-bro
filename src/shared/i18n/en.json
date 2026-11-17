@@ -2000,6 +2000,42 @@
       "noNetwork": "Not connected to a network.",
       "noOne": "No one found on this network.",
       "trusted": "Trusted"
+    },
+    "add": {
+      "title": "Add {name}",
+      "onNetwork": "On your network",
+      "codeLabel": "Pairing code",
+      "placeholder": "······",
+      "paste": "Paste",
+      "oneTry": "A wrong code cancels the request.",
+      "noCodeOnClipboard": "The clipboard doesn’t hold a pairing code.",
+      "add": "Add",
+      "button": "Add",
+      "added": "Added {name}"
+    },
+    "code": {
+      "title": "{name} wants to add you",
+      "share": "Share this code.",
+      "copy": "Copy pairing code",
+      "clickToCopy": "Click to copy",
+      "copied": "Copied",
+      "expires": "Expires in {time}"
+    },
+    "result": {
+      "mismatch": "Code didn’t match",
+      "mismatchAdder": "Ask them to share their code again and retry.",
+      "expired": "Code expired",
+      "expiredAdder": "Try again to get a new code.",
+      "requestNewCode": "Ask them to request a new pairing code.",
+      "cancelled": "Request cancelled",
+      "cancelledNote": "They cancelled the request.",
+      "connectionLost": "Connection lost",
+      "connectionLostNote": "Check you’re both on the same network and try again.",
+      "addedYou": "{name} added you",
+      "addBackNote": "Add them too, so you can send to each other?",
+      "addBack": "Add back",
+      "notNow": "Not now",
+      "tryAgain": "Try again"
     }
   }
 }

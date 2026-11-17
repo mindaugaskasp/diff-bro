@@ -64,6 +64,9 @@ function commitName() {
             ><span class="row-2-name">{{ peer.name }}</span></span
           >
           <span v-if="peer.trusted" class="status">{{ $t('lan.settings.trusted') }}</span>
+          <button v-else type="button" class="btn btn-sm" @click="lan.add(peer)">
+            {{ $t('lan.add.button') }}
+          </button>
         </div>
       </div>
     </template>

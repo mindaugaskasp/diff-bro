@@ -39,6 +39,7 @@ import {
 import { EmailHandoffDialog, useEmailStore } from '../features/email'
 import { ConflictsDialog, useConflictsStore } from '../features/merge'
 import { ComparePromptDialog, useOpenWithStore } from '../features/openWith'
+import { PairingDialogs } from '../features/lan'
 import { useUiStore } from '../stores/uiStore'
 
 const store = useDiffStore()
@@ -89,4 +90,5 @@ const openWith = useOpenWithStore()
   <CliBlockedDialog v-if="store.cliBlocked" />
   <ConflictsDialog v-if="conflicts.open" />
   <ComparePromptDialog v-if="openWith.prompt" />
+  <PairingDialogs />
 </template>

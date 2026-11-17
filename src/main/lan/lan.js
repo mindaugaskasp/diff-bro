@@ -32,7 +32,8 @@ async function open(ctx) {
   if (!ctx.addresses.length) return
   ctx.server = await listenOnPrivate(ctx.addresses, {
     onFrame: (f, c) => onFrame(ctx, f, c),
-    accept: (header) => (ctx.acceptors.get(header.type) ?? (() => true))(header)
+    accept: (header) => (ctx.acceptors.get(header.type) ?? (() => true))(header),
+    onClose: (c) => ctx.closeHandlers.forEach((handle) => handle(c))
   })
   ctx.discovery = await createDiscovery({
     addresses: ctx.addresses,
@@ -113,6 +114,7 @@ export function createLan({ settings, selfFp, onChange, now = Date.now }) {
     now,
     handlers: new Map(),
     acceptors: new Map(),
+    closeHandlers: [],
     addresses: [],
     server: null,
     discovery: null,
@@ -125,6 +127,7 @@ export function createLan({ settings, selfFp, onChange, now = Date.now }) {
     apply: (next) => apply(ctx, next),
     on: (type, handler) => ctx.handlers.set(type, handler),
     accept: (type, check) => ctx.acceptors.set(type, check),
+    onClosed: (handler) => ctx.closeHandlers.push(handler),
     endpointOf: (fp) => ctx.peers.endpointOf(fp),
     peers: () => ctx.peers.list(),
     isOnline: () => ctx.addresses.length > 0,

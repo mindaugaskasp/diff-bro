@@ -123,6 +123,9 @@
   --text-on-danger: var(--danger-text);
   --hairline: color-mix(in srgb, var(--text) 14%, transparent);
   --hairline-soft: color-mix(in srgb, var(--text) 9%, transparent);
+  --code-box-h: 52px;
+  --code-box-font: 26px;
+  --code-box-tracking: 6px;
   /* neon, nyan and matrix turn it off: on their accents it reads as a glow. */
   --tour-halo: color-mix(in srgb, var(--accent) 22%, transparent);
   /* Keyboard focus. A bare --accent ring scores 2.58 on solar and 2.98 on

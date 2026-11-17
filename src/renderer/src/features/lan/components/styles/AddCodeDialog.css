@@ -1,0 +1,50 @@
+.add-code {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.dialog-note {
+  margin: 0;
+}
+.code-label {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-meta);
+  margin-bottom: calc(-1 * var(--space-2));
+}
+.code-field {
+  position: relative;
+}
+.code-input {
+  width: 100%;
+  height: var(--code-box-h);
+  box-sizing: border-box;
+  border-radius: var(--radius-lg);
+  background: var(--field-face);
+  border: 1px solid var(--field-edge);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--code-box-font);
+  font-weight: 600;
+  letter-spacing: var(--code-box-tracking);
+  text-align: center;
+  text-transform: uppercase;
+}
+.code-input::placeholder {
+  color: var(--text-hint);
+  letter-spacing: var(--code-box-tracking);
+}
+.code-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.paste {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.spacer {
+  flex: 1;
+}
