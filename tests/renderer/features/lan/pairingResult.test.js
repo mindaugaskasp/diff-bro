@@ -18,8 +18,12 @@ describe('pairingResult', () => {
     )
   })
 
-  it('the holder is offered to add back after being added', () => {
-    expect(pairingResult({ role: 'holder', stage: 'added-you' }).action).toBe('addBack')
+  it('a declined add says who declined, with nothing to retry', () => {
+    expect(pairingResult({ role: 'adder', stage: 'declined' })).toEqual({
+      title: 'lan.result.declined',
+      note: undefined,
+      action: null
+    })
   })
 
   it('a cancelled request has nothing to retry', () => {

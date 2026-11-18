@@ -227,6 +227,11 @@ literally).
   uses to say which services a device offers (`dnsSd.js`).
 - **Pairing code** — the one-time six-character code shown on the screen of the
   person being added and typed by the person adding (`pairingCode.js`).
+- **Confirm code** — the four characters both screens show after a correct
+  pairing code; the person being added presses Add only when theirs matches,
+  and only then are both keys stored (`confirmCode` in `pairingCode.js`).
+- **Nearby** — people on your network you haven't added yet, listed under your
+  people in the Share dialog and in Settings ▸ Network, each with Add.
 - **Commit-then-reveal** — the adder sends a hash of a random value first and
   reveals the value only after seeing the other side's, so the pairing code
   cannot be steered: someone in the middle gets one guess per request.

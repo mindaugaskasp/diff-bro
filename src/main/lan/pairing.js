@@ -1,5 +1,12 @@
 import { randomUUID } from 'crypto'
-import { codesMatch, commitmentOf, isRevealValid, newNonce, pairingCode } from './pairingCode'
+import {
+  codesMatch,
+  commitmentOf,
+  confirmCode,
+  isRevealValid,
+  newNonce,
+  pairingCode
+} from './pairingCode'
 import { cleanPeerName } from './peerName'
 
 export const PAIRING_MS = 120_000
@@ -8,11 +15,12 @@ export const REVEAL_MS = 10_000
 const NAME_CHARS = 64
 
 const RESULT_STAGE = {
-  matched: 'added-you',
   mismatched: 'mismatch',
   cancelled: 'cancelled',
-  expired: 'expired'
+  expired: 'expired',
+  declined: 'declined'
 }
+const CONFIRMING = new Set(['confirming', 'confirm'])
 
 const view = (s) => ({
   id: s.id,
@@ -21,7 +29,8 @@ const view = (s) => ({
   fp: s.peerFp,
   name: s.name,
   expiresAt: s.expiresAt,
-  ...(s.role === 'holder' && s.stage === 'show-code' ? { code: s.code } : {})
+  ...(s.role === 'holder' && s.stage === 'show-code' ? { code: s.code } : {}),
+  ...(CONFIRMING.has(s.stage) ? { confirm: s.confirm } : {})
 })
 
 const short = (fp) => fp.slice(0, 8)
@@ -63,9 +72,22 @@ function parsedOrNull(ctx, text) {
   }
 }
 
+// Nothing is stored until the holder confirms: a declined or expired add leaves both sides as they were.
+function onAdderResult(ctx, s, result) {
+  if (result === 'accepted' && s.stage === 'confirming') {
+    // The holder closes right after accepting; that close must not win over the store.
+    s.storing = true
+    return ctx.storeKey(s.holderKey, s.peerFp, s.name).then(() => finish(ctx, s, 'added'))
+  }
+  finish(
+    ctx,
+    s,
+    RESULT_STAGE[result] && result !== 'mismatched' ? RESULT_STAGE[result] : 'cancelled'
+  )
+}
+
 function onAdderFrame(ctx, s, { header }) {
-  if (header.type === 'add-result' && RESULT_STAGE[header.result])
-    return finish(ctx, s, header.result === 'expired' ? 'expired' : 'cancelled')
+  if (header.type === 'add-result') return onAdderResult(ctx, s, header.result)
   const parsed = header.type === 'add-reply' && parsedOrNull(ctx, header.key)
   if (s.stage !== 'connecting' || !parsed || parsed.fp !== s.peerFp) {
     note(
@@ -92,6 +114,7 @@ async function add(ctx, peerFp, name) {
     s.conn = await ctx.connect(peerFp, {
       onFrame: (frame) => onAdderFrame(ctx, s, frame),
       onClose: () => {
+        if (s.storing) return
         if (s.stage === 'connecting') note(ctx, `add ${short(peerFp)}: closed before the code step`)
         finish(ctx, s, 'connection-lost')
       }
@@ -115,9 +138,13 @@ async function submitCode(ctx, id, code) {
   const s = ctx.sessions.get(id)
   if (!s || s.role !== 'adder' || s.stage !== 'enter-code') return { error: 'no-request' }
   const matched = codesMatch(s.expected, code)
-  if (matched) await ctx.storeKey(s.holderKey, s.peerFp, s.name)
   s.conn.send({ type: 'add-result', result: matched ? 'matched' : 'mismatched' })
-  finish(ctx, s, matched ? 'added' : 'mismatch')
+  if (!matched) {
+    finish(ctx, s, 'mismatch')
+    return { ok: true, matched }
+  }
+  Object.assign(s, { stage: 'confirming', confirm: confirmCode(s.expected) })
+  ctx.emit(view(s))
   return { ok: true, matched }
 }
 
@@ -149,6 +176,7 @@ function onRequest(ctx, { header }, conn) {
     role: 'holder',
     conn,
     peerFp: parsed.fp,
+    adderKey: parsed.key,
     name: cleanPeerName(header.name, NAME_CHARS),
     commit: header.commit,
     nonce: newNonce(),
@@ -175,14 +203,22 @@ function onReveal(ctx, { header }, conn) {
   ctx.emit(view(s))
 }
 
-// Asking someone you already added to add you back is what made adding each other loop.
-async function onResult(ctx, { header }, conn) {
+function onResult(ctx, { header }, conn) {
   const s = ctx.byConn.get(conn)
   if (!s || s.role !== 'holder') return conn.destroy()
-  // The adder closes right after sending this; the close must not win the trust lookup.
-  s.resulting = true
-  const isBack = header.result === 'matched' && (await ctx.isTrusted?.(s.peerFp))
-  finish(ctx, s, isBack ? 'added-back' : RESULT_STAGE[header.result])
+  if (header.result !== 'matched' || s.stage !== 'show-code')
+    return finish(ctx, s, RESULT_STAGE[header.result] ?? 'cancelled')
+  Object.assign(s, { stage: 'confirm', confirm: confirmCode(s.code) })
+  ctx.emit(view(s))
+}
+
+async function confirm(ctx, id, accept) {
+  const s = ctx.sessions.get(id)
+  if (!s || s.role !== 'holder' || s.stage !== 'confirm') return { error: 'no-request' }
+  if (accept) await ctx.storeKey(s.adderKey, s.peerFp, s.name)
+  s.conn.send({ type: 'add-result', result: accept ? 'accepted' : 'declined' })
+  finish(ctx, s, accept ? 'added' : 'declined', { silent: !accept })
+  return { ok: true }
 }
 
 export function createPairing(deps) {
@@ -200,9 +236,10 @@ export function createPairing(deps) {
     onRequest: (frame, conn) => onRequest(ctx, frame, conn),
     onReveal: (frame, conn) => onReveal(ctx, frame, conn),
     onResult: (frame, conn) => onResult(ctx, frame, conn),
+    confirm: (id, accept) => confirm(ctx, id, accept),
     onClosed: (conn) => {
       const s = ctx.byConn.get(conn)
-      if (s && !s.resulting) finish(ctx, s, 'connection-lost')
+      if (s) finish(ctx, s, 'connection-lost')
     },
     cancelAll: () => [...ctx.sessions.values()].forEach((s) => finish(ctx, s, 'connection-lost'))
   }

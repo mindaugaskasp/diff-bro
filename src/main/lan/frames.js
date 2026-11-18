@@ -10,7 +10,10 @@ const SHAPES = {
   'add-request': { key: isKey, name: (v) => isText(v, 64), commit: (v) => B64_32.test(v) },
   'add-reply': { key: isKey, name: (v) => isText(v, 64), nonce: (v) => B64_32.test(v) },
   'add-reveal': { nonce: (v) => B64_32.test(v) },
-  'add-result': { result: (v) => ['matched', 'mismatched', 'cancelled', 'expired'].includes(v) },
+  'add-result': {
+    result: (v) =>
+      ['matched', 'mismatched', 'cancelled', 'expired', 'accepted', 'declined'].includes(v)
+  },
   item: { fp: (v) => FP.test(v) },
   'item-ack': {
     ok: (v) => typeof v === 'boolean',

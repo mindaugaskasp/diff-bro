@@ -470,13 +470,22 @@ Diff Bro instances on the same network find each other and exchange keys, diffs
 and snippets directly. The sockets, and what fences them, are in the
 [Offline guarantee](#offline-guarantee).
 
-- **Adding someone** stores their public key exactly as importing a
-  `.diffbrokey` does. They prove it is theirs with a one-time pairing code:
-  - their screen shows the code, and you type or paste it;
+- **Adding someone** stores both public keys, each exactly as importing a
+  `.diffbrokey` does. One exchange proves both:
+  - their screen shows a one-time pairing code, and you type or paste it;
   - the code is derived from both keys and two nonces, the adder committing
     to its nonce first, so someone in the middle gets one guess per request;
   - a wrong code cancels the request;
-  - the code is never stored.
+  - a correct code stores nothing yet. Both screens show a four-character
+    confirm code derived from the pairing code, and they press Add only if
+    theirs matches yours. A key swapped in the middle gives the two sides
+    different pairing codes, so your typed code fails before any confirm code
+    is shown;
+  - their Add stores your key and tells your side to store theirs. Decline,
+    expiry or a dropped connection stores nothing on either side;
+  - neither code is stored.
+    An instance on the version before the confirm step announces `v=1` and is
+    listed as needing an update, with Add disabled.
 - **Sending** seals the diff or snippet exactly as Share does, then sends the
   sealed envelope. The recipient opens it with the same checks a `.diffbro`
   file gets (signature, audience, expiry). Secret snippets are never sent.

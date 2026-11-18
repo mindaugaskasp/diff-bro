@@ -4,6 +4,7 @@ import { CODE_ALPHABET, CODE_LENGTH, normalizeCode } from '../../shared/pairingC
 
 export { CODE_ALPHABET, CODE_LENGTH, formatCode, normalizeCode } from '../../shared/pairingCodeText'
 export const NONCE_BYTES = 32
+const CONFIRM_LENGTH = 4
 
 const sha256 = (...parts) => {
   const hash = createHash('sha256')
@@ -30,16 +31,23 @@ export function isRevealValid(commit, nonce) {
   return isSameBytes(Buffer.from(commitmentOf(nonce)), Buffer.from(commit))
 }
 
-export function pairingCode({ holderFp, adderFp, holderNonce, adderNonce }) {
-  let value = BigInt(`0x${sha256(holderFp, adderFp, holderNonce, adderNonce).toString('hex')}`)
+function encode(digest, length) {
+  let value = BigInt(`0x${digest.toString('hex')}`)
   const base = BigInt(CODE_ALPHABET.length)
   let code = ''
-  for (let i = 0; i < CODE_LENGTH; i++) {
+  for (let i = 0; i < length; i++) {
     code += CODE_ALPHABET[Number(value % base)]
     value /= base
   }
   return code
 }
+
+export const pairingCode = ({ holderFp, adderFp, holderNonce, adderNonce }) =>
+  encode(sha256(holderFp, adderFp, holderNonce, adderNonce), CODE_LENGTH)
+
+// Both screens show this after a correct code; the holder adds only when the two match.
+export const confirmCode = (code) =>
+  encode(sha256('diffbro-confirm/1', normalizeCode(code) ?? ''), CONFIRM_LENGTH)
 
 export function codesMatch(expected, typed) {
   const a = normalizeCode(expected)

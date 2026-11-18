@@ -19,7 +19,9 @@ const props = defineProps({
   },
   showEmail: { type: Boolean, default: false },
   // A Set of fingerprints on the network, or null when sharing on the network is off.
-  reachable: { type: Object, default: null, validator: (v) => v === null || v instanceof Set }
+  reachable: { type: Object, default: null, validator: (v) => v === null || v instanceof Set },
+  // Only people nearby: no one to search, pick or count yet.
+  bare: { type: Boolean, default: false }
 })
 const isOff = (fp) => !!props.reachable && !props.reachable.has(fp)
 defineEmits(['submit', 'close', 'add'])
@@ -33,7 +35,7 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
 
 <template>
   <div class="picker">
-    <div class="filterbar">
+    <div v-if="!bare" class="filterbar">
       <span class="field-search">
         <AppIcon name="search" />
         <input
@@ -72,7 +74,7 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
       </button>
     </div>
 
-    <ul class="picked">
+    <ul v-if="!bare" class="picked">
       <li v-for="r in picker.picked.value" :key="r.fingerprint">
         <button
           type="button"
@@ -87,7 +89,7 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
     </ul>
 
     <div class="dialog-scroller rows" :style="{ '--reserved-rows': reservedRows }">
-      <p v-if="!picker.visible.value.length" class="empty">
+      <p v-if="!bare && !picker.visible.value.length" class="empty">
         {{
           picker.query.value
             ? t('recipientPicker.noMatches', { query: picker.query.value })
@@ -115,9 +117,10 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
           </label>
         </li>
       </ul>
+      <slot />
     </div>
 
-    <div class="listfoot">
+    <div v-if="!bare" class="listfoot">
       <span v-if="picker.isFiltered.value">
         {{
           $t('share.recipientPicker.visibleOfTotal', {

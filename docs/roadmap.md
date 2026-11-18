@@ -345,7 +345,7 @@ flowchart LR
   trust --> stop["Stop sharing<br>signed notice"]
 ```
 
-- Done. Add someone with a one-time pairing code (copy, paste, countdown, one try).
+- Done. Add someone with a one-time pairing code (copy, paste, countdown, one try); they confirm a short code and you add each other in one go, from Settings or the Share dialog.
 - Done. Send diffs and snippets, sealed as a `.diffbro`; people not on the
   network are disabled in the Share dialog.
 - Done. Receive in a dialog queued "1 of N"; Silence for 1 min to Forever; a bell

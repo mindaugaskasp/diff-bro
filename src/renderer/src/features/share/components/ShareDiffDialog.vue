@@ -1,9 +1,11 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useShareStore } from '../shareStore'
 import { useRecipientPicker } from '../../../composables/useRecipientPicker'
 import BaseDialog from '../../../components/BaseDialog.vue'
 import RecipientPicker from './RecipientPicker.vue'
+import NearbyPeople from './NearbyPeople.vue'
+import { useLanStore } from '../../lan'
 import ShareActions from './ShareActions.vue'
 import { useShareNetwork } from '../useShareNetwork'
 
@@ -15,14 +17,21 @@ const recipients = ref([])
 const myFingerprint = ref('')
 const picker = useRecipientPicker(recipients)
 const { network, reachable, networkNote } = useShareNetwork(picker, () => !!share.shareSnippet)
+const lan = useLanStore()
+const nearby = computed(() => {
+  const query = picker.query.value.trim().toLowerCase()
+  return lan.nearby.filter((p) => p.name.toLowerCase().includes(query))
+})
+const isPicking = computed(() => recipients.value.length > 0 || lan.nearby.length > 0)
 
 // BaseDialog listens for Escape on WINDOW in the capture phase and stops the
 // event, so a handler on the search input never sees it — which is why this
 // dialog opts out of that and owns the two-stage Escape itself. Registered in
 // capture too, so it runs wherever focus happens to be inside the dialog.
 function onEscape(e) {
-  if (e.key !== 'Escape' || !recipients.value.length) return
+  if (e.key !== 'Escape' || !isPicking.value || lan.pairing) return
   e.stopPropagation()
+  if (!recipients.value.length) return close()
   picker.handleKey(e, { onClose: close })
 }
 
@@ -40,6 +49,10 @@ async function refresh(preferFp) {
 }
 
 // Refresh the recipient list once the "Add trusted key" dialog closes.
+watch(
+  () => lan.lastAdded,
+  (added) => added && refresh(added.mine ? added.fp : undefined)
+)
 watch(
   () => share.pendingTrustedKey,
   (val, old) => {
@@ -62,7 +75,7 @@ function submit() {
 <template>
   <!-- Normal case: at least one trusted recipient exists. -->
   <BaseDialog
-    v-if="recipients.length"
+    v-if="isPicking"
     width="452px"
     :title="$t(share.shareSnippet ? 'lan.share.titleSnippet' : 'share.diffDialog.shareDiff')"
     :escape-closes="false"
@@ -73,11 +86,14 @@ function submit() {
       <RecipientPicker
         :picker="picker"
         :reachable="reachable"
+        :bare="!recipients.length"
         show-email
         @submit="submit"
         @close="close"
         @add="share.addTrustedKey()"
-      />
+      >
+        <NearbyPeople v-if="nearby.length" :peers="nearby" />
+      </RecipientPicker>
       <p v-if="networkNote" class="dialog-note">{{ $t(networkNote) }}</p>
       <p v-else class="dialog-note">
         {{ $t('share.diffDialog.sealedFor', picker.picked.value.length) }}

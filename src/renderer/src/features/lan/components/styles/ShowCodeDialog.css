@@ -59,3 +59,13 @@
 .spacer {
   flex: 1;
 }
+
+/* The confirm code is read, not copied. */
+.confirm-box,
+.confirm-box:hover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  background: color-mix(in srgb, var(--text) 8%, var(--bg-raised));
+}

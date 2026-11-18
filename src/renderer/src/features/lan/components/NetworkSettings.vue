@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from 'vue'
 import SettingToggle from '../../../components/SettingToggle.vue'
 import { useLanStore } from '../lanStore'
+import { needsUpdate } from '../peerVersion'
 
 const lan = useLanStore()
 const name = ref(lan.name)
@@ -72,7 +73,14 @@ function commitName() {
           >
             {{ $t('lan.stop.button') }}
           </button>
-          <button v-else type="button" class="btn btn-sm" @click="lan.add(peer)">
+          <span v-else-if="needsUpdate(peer)" class="status">{{ $t('lan.needsUpdate') }}</span>
+          <button
+            v-if="!peer.trusted"
+            type="button"
+            class="btn btn-sm"
+            :disabled="needsUpdate(peer)"
+            @click="lan.add(peer)"
+          >
             {{ $t('lan.add.button') }}
           </button>
         </div>

@@ -29,7 +29,7 @@ describe('announcement', () => {
     )
     expect(packet.isResponse).toBe(true)
     expect(announcementsFrom(packet)).toEqual([
-      { fp: FP, name: 'Ana’s MacBook Pro', port: 51515, version: 1, ttl: 120 }
+      { fp: FP, name: 'Ana’s MacBook Pro', port: 51515, version: 2, ttl: 120 }
     ])
   })
 
@@ -190,5 +190,23 @@ describe('the address an announcement names', () => {
     ).toBeUndefined()
     const odd = encodeAnnouncement({ fp: FP, name: 'Ben', port: 4000, addr: 'evil.example' })
     expect(announcementsFrom(decodePacket(odd))[0].addr).toBeUndefined()
+  })
+})
+
+describe('protocol versions', () => {
+  it('reads a version 1 announcement as version 1, so it can be shown as needing an update', () => {
+    const header = Buffer.from([0, 0, 0x84, 0, 0, 0, 0, 1, 0, 0, 0, 0])
+    const data = Buffer.concat(
+      ['v=1', `fp=${FP}`, 'name=Old', 'port=4000'].map((s) =>
+        Buffer.concat([Buffer.from([s.length]), Buffer.from(s)])
+      )
+    )
+    const owner = nameBytes([FP, '_diffbro', '_tcp', 'local'])
+    const rec = Buffer.concat([
+      owner,
+      Buffer.from([0, 16, 0, 1, 0, 0, 0, 120, 0, data.length]),
+      data
+    ])
+    expect(announcementsFrom(decodePacket(Buffer.concat([header, rec])))[0].version).toBe(1)
   })
 })

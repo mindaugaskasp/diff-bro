@@ -22,23 +22,34 @@ export async function startPeer(base) {
   return { dir, app, page, name }
 }
 
-export async function addPeer(adder, holder) {
-  const settings = await openSettingsPage(adder.page, 'Network')
-  const row = settings.locator('.person', { hasText: holder.name })
-  await expect(row).toBeVisible({ timeout: 20_000 })
-  await row.getByRole('button', { name: 'Add' }).click()
+export async function typeCode(adder, holder) {
   const shown = holder.page.getByRole('dialog', { name: `${adder.name} wants to add you` })
   const code = (await shown.getByTestId('lan-code').innerText()).replace(/\W/g, '').slice(0, 6)
   const adding = adder.page.getByRole('dialog', { name: `Add ${holder.name}` })
   await adding.getByTestId('lan-code-input').fill(code)
   await adding.getByRole('button', { name: 'Add', exact: true }).click()
+  const waiting = adder.page.getByRole('dialog', { name: `Waiting for ${holder.name}` })
+  const confirming = holder.page.getByRole('dialog', { name: `Add ${adder.name}?` })
+  await expect(waiting).toBeVisible()
+  const confirm = await confirming.getByTestId('lan-confirm-code').innerText()
+  await expect(waiting.getByTestId('lan-confirm-code')).toHaveText(confirm)
+  return { waiting, confirming }
+}
+
+export async function confirmAdd(adder, holder) {
+  const { waiting, confirming } = await typeCode(adder, holder)
+  await confirming.getByRole('button', { name: 'Add', exact: true }).click()
+  await expect(waiting).toBeHidden()
+  await expect(holder.page.getByText(`Added ${adder.name}`)).toBeVisible()
+}
+
+export async function addPeer(adder, holder) {
+  const settings = await openSettingsPage(adder.page, 'Network')
+  const row = settings.locator('.person', { hasText: holder.name })
+  await expect(row).toBeVisible({ timeout: 20_000 })
+  await row.getByRole('button', { name: 'Add' }).click()
+  await confirmAdd(adder, holder)
   await expect(row.getByText('Trusted')).toBeVisible()
-  const asked = holder.page.getByRole('dialog', { name: `${adder.name} added you` })
-  const addedBack = holder.page.getByText(`${adder.name} added you back`)
-  await expect(asked.or(addedBack)).toBeVisible()
-  if (await asked.isVisible()) {
-    await asked.locator('.dialog-actions').getByRole('button', { name: 'Not now' }).click()
-  }
   await closeSettings(adder.page)
 }
 
@@ -46,7 +57,6 @@ export async function pairBoth() {
   const ana = await startPeer('Ana')
   const ben = await startPeer('Ben')
   await addPeer(ben, ana)
-  await addPeer(ana, ben)
   return { ana, ben }
 }
 

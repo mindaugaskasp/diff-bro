@@ -11,6 +11,8 @@ import { test, expect } from './fixtures.mjs'
 // process for this install's fingerprint, which creates its keypair in
 // safeStorage — a path jsdom can't reach.
 test('sharing with no trusted keys walks through first-time key setup', async ({ page }) => {
+  // Parallel workers share the network; anyone on it would be listed as Nearby instead.
+  await page.evaluate(() => window.api.lanUpdate({ enabled: false }))
   await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste or type the original text').fill('before')
   await page.getByPlaceholder('Paste or type the changed text').fill('after')
@@ -22,7 +24,7 @@ test('sharing with no trusted keys walks through first-time key setup', async ({
   await expect(save).toBeVisible()
   await save.getByRole('button', { name: 'Next: choose recipient' }).click()
 
-  // Step 2: no trusted keys → the one-time setup, not the recipient picker.
+  // Step 2: no trusted keys and no one nearby → the one-time setup, not the recipient picker.
   const setup = page.getByRole('dialog', { name: 'Share diff — one-time setup' })
   await expect(setup).toBeVisible()
   // Exact: each step's heading text is a substring of its action button's label

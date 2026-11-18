@@ -6,7 +6,6 @@ import { connectTo } from './server'
 import { pairingKeyText, parsePairingKey } from '../keyText'
 import { checkedTrustedName, storeTrusted } from '../trustedKeys'
 import { appendLog } from '../logger'
-import { readTrusted } from '../trustedKeys'
 
 const FP = /^[0-9a-f]{32}$/
 let pairing = null
@@ -36,7 +35,6 @@ export function setUpPairing({ lan, identity, onTrustChanged }) {
       return endpoint ? connectTo(endpoint, handlers) : Promise.reject(new Error('gone'))
     },
     parseKey: parsePairingKey,
-    isTrusted: async (fp) => (await readTrusted()).some((t) => t.fingerprint === fp),
     storeKey: async (key, fp, name) => {
       await storeTrusted(key, fp, await labelFor(fp, name))
       onTrustChanged()
@@ -67,6 +65,11 @@ export function registerPairingIpc({ nameOf }) {
   )
   ipcMain.handle('lan:cancel', (_e, id) =>
     pairing && typeof id === 'string' ? pairing.cancel(id) : { error: 'no-request' }
+  )
+  ipcMain.handle('lan:confirm', (_e, id, accept) =>
+    pairing && typeof id === 'string'
+      ? pairing.confirm(id, accept === true)
+      : { error: 'no-request' }
   )
   ipcMain.handle('lan:pasteCode', () => {
     const code = normalizeCode(clipboard.readText())

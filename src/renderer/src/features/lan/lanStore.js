@@ -24,11 +24,13 @@ export const useLanStore = defineStore('lan', {
     received: {},
     requests: [],
     confirmStop: null,
-    revokedBy: null
+    revokedBy: null,
+    lastAdded: null
   }),
   getters: {
     isActive: (s) => s.enabled && s.online,
     reachable: (s) => new Set(s.enabled ? s.peers.map((p) => p.fp) : []),
+    nearby: (s) => (s.enabled && s.online ? s.peers.filter((p) => !p.trusted) : []),
     currentOffer: (s) => s.items.find((i) => i.id === s.offerQueue[0]) ?? null,
     isSilenced: (s) => !arePopupsShown(s),
     showsBell: (s) => s.items.length + s.requests.length > 0 || !arePopupsShown(s),
@@ -56,10 +58,10 @@ export const useLanStore = defineStore('lan', {
     },
     showPairing(view) {
       if (this.holdRequest(view)) return
-      const notice = { added: 'lan.add.added', 'added-back': 'lan.add.addedBack' }[view?.stage]
-      if (!notice) return (this.pairing = view)
+      if (view?.stage !== 'added') return (this.pairing = view)
       this.pairing = null
-      useDiffStore().showNotice(t(notice, { name: view.name }))
+      this.lastAdded = { fp: view.fp, mine: view.role === 'adder' }
+      useDiffStore().showNotice(t('lan.add.added', { name: view.name }))
     },
     async add({ fp, name }) {
       this.pairing = { role: 'adder', stage: 'connecting', fp, name }
@@ -68,6 +70,11 @@ export const useLanStore = defineStore('lan', {
     },
     submitCode(code) {
       if (this.pairing?.id) return window.api.lanSubmitCode(this.pairing.id, code)
+    },
+    confirmAdd(accept) {
+      const id = this.pairing?.id
+      if (!accept) this.pairing = null
+      if (id) window.api.lanConfirm(id, accept)
     },
     cancelPairing() {
       const id = this.pairing?.id
@@ -139,6 +146,9 @@ export const useLanStore = defineStore('lan', {
     },
     holdRequest(view) {
       const waiting = this.requests.some((r) => r.id === view?.id)
+      // The adder is waiting on this answer, so the confirm step is never parked under the bell.
+      if (waiting && view.stage === 'confirm') this.requests = withoutId(this.requests, view.id)
+      if (view?.stage === 'confirm') return false
       const isNew = view?.role === 'holder' && view.stage === 'show-code' && !arePopupsShown(this)
       if (!waiting && !isNew) return false
       this.requests = [...withoutId(this.requests, view.id), view]
