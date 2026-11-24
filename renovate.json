@@ -32,7 +32,7 @@
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "dev tooling",
-      "matchPackageNames": ["!electron", "!monaco-editor"]
+      "matchPackageNames": ["!electron", "!esbuild", "!fsevents", "!electron-winstaller", "!vue-demi", "!monaco-editor"]
     },
     {
       "description": "Ships in the app.",
@@ -44,12 +44,18 @@
       "matchDepTypes": ["dependencies"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "runtime dependencies",
-      "matchPackageNames": ["!electron", "!monaco-editor"]
+      "matchPackageNames": ["!electron", "!esbuild", "!fsevents", "!electron-winstaller", "!vue-demi", "!monaco-editor"]
+    },
+    {
+      "description": "Minor and patch merge themselves once the PR is green; minimumReleaseAge and strict internal checks already hold each one back for a week.",
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "automerge": true
     },
     {
       "description": "allowScripts in package.json is version-pinned: the new version must be re-approved with `npm install-scripts approve` in the same PR.",
       "matchPackageNames": ["electron", "esbuild", "fsevents", "electron-winstaller", "vue-demi"],
       "addLabels": ["install-script"],
+      "automerge": false,
       "prBodyNotes": [
         "⚠️ This package runs an install script. Review it, then run `npm install-scripts approve {{{depName}}}` and commit the updated `allowScripts` pin before merging."
       ]
